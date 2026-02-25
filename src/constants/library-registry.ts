@@ -96,6 +96,7 @@ export function lookupLibrary(packageName: string): LibraryMapping | undefined {
 export const SIDE_EFFECT_PATTERNS = [/\.css$/, /\.scss$/, /\.less$/, /\.sass$/]
 
 export const SUPPORTED_LIBRARY_NAMES = [
+  'HTML',
   'React',
   'Tailwind CSS',
   'shadcn/ui',

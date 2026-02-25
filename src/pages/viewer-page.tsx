@@ -3,28 +3,43 @@ import { ErrorPanel } from '../components/error-panel'
 import { PreviewFrame } from '../components/preview-frame'
 import { useSandbox } from '../hooks/use-sandbox'
 import { useUrlHash } from '../hooks/use-url-hash'
+import { isHtmlDocument } from '../lib/html-detector'
 import { cleanCode } from '../lib/code-cleaner'
 import { findComponentName } from '../lib/component-finder'
 import { rewriteImports } from '../lib/import-rewriter'
 
 export function ViewerPage() {
   const { codeFromHash } = useUrlHash()
-  const { iframeRef, isReady, error, errorType, sendRender } = useSandbox()
+  const { iframeRef, isReady, error, errorType, sendRender, sendHtml } =
+    useSandbox()
+
+  const isHtml = useMemo(
+    () => (codeFromHash ? isHtmlDocument(codeFromHash) : false),
+    [codeFromHash],
+  )
 
   const transformedResult = useMemo(() => {
-    if (!codeFromHash) return null
+    if (!codeFromHash || isHtml) return null
 
     const cleaned = cleanCode(codeFromHash)
     const { rewrittenCode } = rewriteImports(cleaned)
     const componentName = findComponentName(rewrittenCode)
 
     return { code: rewrittenCode, componentName }
-  }, [codeFromHash])
+  }, [codeFromHash, isHtml])
 
   useEffect(() => {
-    if (!transformedResult) return
-    sendRender(transformedResult.code, transformedResult.componentName)
-  }, [transformedResult, sendRender])
+    if (!codeFromHash) return
+
+    if (isHtml) {
+      sendHtml(codeFromHash)
+      return
+    }
+
+    if (transformedResult) {
+      sendRender(transformedResult.code, transformedResult.componentName)
+    }
+  }, [codeFromHash, isHtml, transformedResult, sendRender, sendHtml])
 
   if (!codeFromHash) {
     return (
@@ -36,7 +51,11 @@ export function ViewerPage() {
 
   return (
     <div className="relative h-screen">
-      <PreviewFrame iframeRef={iframeRef} isReady={isReady} />
+      <PreviewFrame
+        iframeRef={iframeRef}
+        isReady={isReady}
+        isHtmlMode={isHtml}
+      />
       <ErrorPanel error={error} errorType={errorType} />
     </div>
   )

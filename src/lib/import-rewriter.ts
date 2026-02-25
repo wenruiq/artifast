@@ -124,12 +124,18 @@ function rewriteSingleImport(
   const lines: string[] = []
 
   if (parsed.namespaceImport) {
-    lines.push(`const ${parsed.namespaceImport} = window.${globalName};`)
+    // Skip if binding name matches the global (already in scope)
+    if (parsed.namespaceImport !== globalName) {
+      lines.push(`const ${parsed.namespaceImport} = window.${globalName};`)
+    }
     return lines.join('\n')
   }
 
   if (parsed.defaultImport) {
-    lines.push(`const ${parsed.defaultImport} = ${globalName};`)
+    // Skip if binding name matches the global (already in scope)
+    if (parsed.defaultImport !== globalName) {
+      lines.push(`const ${parsed.defaultImport} = ${globalName};`)
+    }
   }
 
   if (parsed.namedImports.length > 0) {

@@ -10,6 +10,7 @@ import { useSandbox } from '../hooks/use-sandbox'
 import { useUrlHash } from '../hooks/use-url-hash'
 import { cleanCode } from '../lib/code-cleaner'
 import { findComponentName } from '../lib/component-finder'
+import { isHtmlDocument } from '../lib/html-detector'
 import { rewriteImports } from '../lib/import-rewriter'
 
 export function CreatorPage() {
@@ -17,8 +18,15 @@ export function CreatorPage() {
   const [errorDismissed, setErrorDismissed] = useState(false)
   const [prevError, setPrevError] = useState<string | null>(null)
   const debouncedCode = useDebouncedCode(rawCode)
-  const { iframeRef, isReady, error, errorType, sendRender, sendClear } =
-    useSandbox()
+  const {
+    iframeRef,
+    isReady,
+    error,
+    errorType,
+    sendRender,
+    sendHtml,
+    sendClear,
+  } = useSandbox()
   const { getShareUrl } = useUrlHash()
 
   // Auto-reopen when a new error arrives (computed during render, not in effect)
@@ -29,8 +37,13 @@ export function CreatorPage() {
     }
   }
 
+  const isHtml = useMemo(
+    () => isHtmlDocument(debouncedCode),
+    [debouncedCode],
+  )
+
   const transformedResult = useMemo(() => {
-    if (!debouncedCode.trim()) return null
+    if (!debouncedCode.trim() || isHtml) return null
 
     const cleaned = cleanCode(debouncedCode)
     const { rewrittenCode, warnings: importWarnings } =
@@ -42,7 +55,7 @@ export function CreatorPage() {
       componentName,
       warnings: importWarnings,
     }
-  }, [debouncedCode])
+  }, [debouncedCode, isHtml])
 
   // Derive warnings from transformedResult instead of storing in state
   const warnings = useMemo(
@@ -50,15 +63,24 @@ export function CreatorPage() {
     [transformedResult],
   )
 
-  // Side effect only: communicate with sandbox iframe
+  // Side effect: communicate with sandbox iframe
   useEffect(() => {
-    if (!transformedResult) {
+    const trimmed = debouncedCode.trim()
+
+    if (!trimmed) {
       sendClear()
       return
     }
 
-    sendRender(transformedResult.code, transformedResult.componentName)
-  }, [transformedResult, sendRender, sendClear])
+    if (isHtml) {
+      sendHtml(trimmed)
+      return
+    }
+
+    if (transformedResult) {
+      sendRender(transformedResult.code, transformedResult.componentName)
+    }
+  }, [debouncedCode, isHtml, transformedResult, sendRender, sendHtml, sendClear])
 
   const handleCodeChange = useCallback((code: string) => {
     setRawCode(code)
@@ -71,13 +93,17 @@ export function CreatorPage() {
   return (
     <div className="flex h-screen flex-col bg-zinc-950">
       <Toolbar code={rawCode} getShareUrl={getShareUrl} />
-      <ImportWarnings warnings={warnings} />
+      {!isHtml && <ImportWarnings warnings={warnings} />}
       <div className="flex min-h-0 flex-1">
         <div className="w-1/2 border-r border-zinc-800">
           <CodeEditor code={rawCode} onChange={handleCodeChange} />
         </div>
         <div className="w-1/2">
-          <PreviewFrame iframeRef={iframeRef} isReady={isReady} />
+          <PreviewFrame
+            iframeRef={iframeRef}
+            isReady={isReady}
+            isHtmlMode={isHtml}
+          />
         </div>
       </div>
       {!errorDismissed && (
