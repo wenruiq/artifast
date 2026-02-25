@@ -29,46 +29,54 @@ export function stripMarkdownFences(code: string): string {
   return result.join('\n')
 }
 
-export function stripExports(code: string): string {
-  return code
-    .split('\n')
-    .map((line) => {
-      const trimmed = line.trimStart()
-      if (EXPORT_DEFAULT_FUNCTION.test(trimmed)) {
-        return line.replace('export default ', '')
-      }
-      if (EXPORT_DEFAULT_CLASS.test(trimmed)) {
-        return line.replace('export default ', '')
-      }
-      if (EXPORT_NAMED.test(trimmed)) {
-        return line.replace(/^(\s*)export\s+/, '$1')
-      }
-      if (EXPORT_DEFAULT_CONST.test(trimmed)) {
-        return line.replace(/^(\s*)export\s+default\s+/, '$1const __DefaultExport__ = ')
-      }
-      return line
-    })
-    .join('\n')
-}
-
-export function stripTypeImports(code: string): string {
-  return code
-    .split('\n')
-    .filter((line) => !TYPE_IMPORT.test(line.trimStart()))
-    .join('\n')
-}
-
-export function stripCssImports(code: string): string {
-  return code
-    .split('\n')
-    .filter((line) => !CSS_IMPORT.test(line.trimStart()))
-    .join('\n')
-}
-
+// js-combine-iterations: single-pass clean that strips markdown fences,
+// type/CSS imports, and rewrites exports in one iteration
 export function cleanCode(code: string): string {
-  let cleaned = stripMarkdownFences(code)
-  cleaned = stripTypeImports(cleaned)
-  cleaned = stripCssImports(cleaned)
-  cleaned = stripExports(cleaned)
-  return cleaned
+  const lines = code.split('\n')
+  const result: string[] = []
+  let insideFence = false
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+
+    // Strip markdown fences
+    if (!insideFence && MARKDOWN_FENCE_START.test(trimmed)) {
+      insideFence = true
+      continue
+    }
+    if (insideFence && MARKDOWN_FENCE_END.test(trimmed)) {
+      insideFence = false
+      continue
+    }
+    if (!insideFence && MARKDOWN_FENCE_START.test(trimmed)) {
+      continue
+    }
+
+    const trimStart = line.trimStart()
+
+    // Strip type imports and CSS imports
+    if (TYPE_IMPORT.test(trimStart) || CSS_IMPORT.test(trimStart)) {
+      continue
+    }
+
+    // Rewrite exports
+    if (EXPORT_DEFAULT_FUNCTION.test(trimStart)) {
+      result.push(line.replace('export default ', ''))
+    } else if (EXPORT_DEFAULT_CLASS.test(trimStart)) {
+      result.push(line.replace('export default ', ''))
+    } else if (EXPORT_NAMED.test(trimStart)) {
+      result.push(line.replace(/^(\s*)export\s+/, '$1'))
+    } else if (EXPORT_DEFAULT_CONST.test(trimStart)) {
+      result.push(
+        line.replace(
+          /^(\s*)export\s+default\s+/,
+          '$1const __DefaultExport__ = ',
+        ),
+      )
+    } else {
+      result.push(line)
+    }
+  }
+
+  return result.join('\n')
 }

@@ -20,6 +20,8 @@ export function useSandbox(): SandboxState {
   >(null)
   const pendingRef = useRef<ParentMessage | null>(null)
   const htmlModeRef = useRef(false)
+  // rerender-defer-reads: use ref so callbacks don't depend on isReady state
+  const isReadyRef = useRef(false)
 
   useEffect(() => {
     function onMessage(event: MessageEvent<SandboxMessage>) {
@@ -28,6 +30,7 @@ export function useSandbox(): SandboxState {
 
       switch (data.type) {
         case 'ready':
+          isReadyRef.current = true
           setIsReady(true)
           if (pendingRef.current && iframeRef.current?.contentWindow) {
             iframeRef.current.contentWindow.postMessage(
@@ -61,6 +64,7 @@ export function useSandbox(): SandboxState {
     if (!iframe) return
 
     htmlModeRef.current = false
+    isReadyRef.current = false
     iframe.removeAttribute('srcdoc')
     iframe.src = '/sandbox.html'
     setIsReady(false)
@@ -68,7 +72,6 @@ export function useSandbox(): SandboxState {
 
   const sendRender = useCallback(
     (code: string, componentName: string) => {
-      // If we were in HTML mode, restore the sandbox first
       if (htmlModeRef.current) {
         const message: ParentMessage = { type: 'render', code, componentName }
         pendingRef.current = message
@@ -78,13 +81,13 @@ export function useSandbox(): SandboxState {
 
       const message: ParentMessage = { type: 'render', code, componentName }
 
-      if (isReady && iframeRef.current?.contentWindow) {
+      if (isReadyRef.current && iframeRef.current?.contentWindow) {
         iframeRef.current.contentWindow.postMessage(message, '*')
       } else {
         pendingRef.current = message
       }
     },
-    [isReady, restoreSandbox],
+    [restoreSandbox],
   )
 
   const sendHtml = useCallback((html: string) => {
@@ -101,13 +104,13 @@ export function useSandbox(): SandboxState {
   const sendClear = useCallback(() => {
     if (htmlModeRef.current) {
       restoreSandbox()
-    } else if (isReady && iframeRef.current?.contentWindow) {
+    } else if (isReadyRef.current && iframeRef.current?.contentWindow) {
       iframeRef.current.contentWindow.postMessage({ type: 'clear' }, '*')
     }
     pendingRef.current = null
     setError(null)
     setErrorType(null)
-  }, [isReady, restoreSandbox])
+  }, [restoreSandbox])
 
   return {
     iframeRef,

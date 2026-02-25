@@ -6,6 +6,7 @@ import { LibraryBadgeList } from '../components/library-badge-list'
 import { PreviewFrame } from '../components/preview-frame'
 import { Toolbar } from '../components/toolbar'
 import { useDebouncedCode } from '../hooks/use-debounced-code'
+import { usePanelResize } from '../hooks/use-panel-resize'
 import { useSandbox } from '../hooks/use-sandbox'
 import { useUrlHash } from '../hooks/use-url-hash'
 import { cleanCode } from '../lib/code-cleaner'
@@ -15,7 +16,6 @@ import { rewriteImports } from '../lib/import-rewriter'
 
 export function CreatorPage() {
   const [rawCode, setRawCode] = useState('')
-  const [editorCollapsed, setEditorCollapsed] = useState(false)
   const [errorDismissed, setErrorDismissed] = useState(false)
   const [prevError, setPrevError] = useState<string | null>(null)
   const debouncedCode = useDebouncedCode(rawCode)
@@ -29,6 +29,16 @@ export function CreatorPage() {
     sendClear,
   } = useSandbox()
   const { getShareUrl } = useUrlHash()
+  const {
+    widthPercent,
+    isCollapsed,
+    isDragging,
+    containerRef,
+    handleMouseDown,
+    handleDoubleClick,
+    restore,
+    collapse,
+  } = usePanelResize()
 
   // Auto-reopen when a new error arrives (computed during render, not in effect)
   if (error !== prevError) {
@@ -91,28 +101,36 @@ export function CreatorPage() {
     setErrorDismissed(true)
   }, [])
 
-  const handleToggleEditor = useCallback(() => {
-    setEditorCollapsed((prev) => !prev)
-  }, [])
-
   return (
     <div className="flex h-screen flex-col bg-zinc-950">
       <Toolbar
         code={rawCode}
         getShareUrl={getShareUrl}
-        editorCollapsed={editorCollapsed}
-        onToggleEditor={handleToggleEditor}
+        editorCollapsed={isCollapsed}
+        onRestoreEditor={restore}
+        onCollapseEditor={collapse}
       />
-      {!isHtml && <ImportWarnings warnings={warnings} />}
-      <div className="flex min-h-0 flex-1">
+      {isHtml ? null : <ImportWarnings warnings={warnings} />}
+      <div
+        ref={containerRef}
+        className={`flex min-h-0 flex-1${isDragging ? ' cursor-col-resize select-none' : ''}`}
+      >
         <div
-          className={`border-r border-zinc-800 transition-all duration-300 ${
-            editorCollapsed ? 'w-0 overflow-hidden' : 'w-1/2'
-          }`}
+          className={isCollapsed ? 'w-0 overflow-hidden' : 'border-r border-zinc-800'}
+          style={isCollapsed ? undefined : { width: `${widthPercent}%` }}
         >
           <CodeEditor code={rawCode} onChange={handleCodeChange} />
         </div>
-        <div className={`transition-all duration-300 ${editorCollapsed ? 'w-full' : 'w-1/2'}`}>
+        <div
+          role="separator"
+          onMouseDown={handleMouseDown}
+          onDoubleClick={handleDoubleClick}
+          className={`shrink-0 cursor-col-resize bg-zinc-900 transition-colors hover:bg-blue-500/40 active:bg-blue-500/60${
+            isCollapsed ? ' hidden' : ' w-1.5'
+          }${isDragging ? ' bg-blue-500/60' : ''}`}
+        />
+        <div className="relative min-w-0 flex-1">
+          {isDragging && <div className="absolute inset-0 z-10" />}
           <PreviewFrame
             iframeRef={iframeRef}
             isReady={isReady}

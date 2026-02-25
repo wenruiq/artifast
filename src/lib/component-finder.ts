@@ -1,5 +1,5 @@
 const FUNCTION_COMPONENT = /(?:function|const|let)\s+([A-Z][A-Za-z0-9]*)/g
-const PREFERRED_NAMES = ['App', 'Application', 'Main', 'Root']
+const PREFERRED_NAMES = ['App', 'Application', 'Main', 'Root'] as const
 
 export function findComponentName(code: string): string {
   const matches: string[] = []
@@ -13,8 +13,10 @@ export function findComponentName(code: string): string {
     return 'App'
   }
 
+  // Check preferred names in priority order, using Set for O(1) membership test
+  const matchSet = new Set(matches)
   for (const preferred of PREFERRED_NAMES) {
-    if (matches.includes(preferred)) {
+    if (matchSet.has(preferred)) {
       return preferred
     }
   }

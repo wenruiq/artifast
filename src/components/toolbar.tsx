@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { shortenUrl } from '../lib/url-shortener'
 
@@ -8,15 +8,18 @@ interface ToolbarProps {
   readonly code: string
   readonly getShareUrl: (code: string) => Promise<string>
   readonly editorCollapsed: boolean
-  readonly onToggleEditor: () => void
+  readonly onRestoreEditor: () => void
+  readonly onCollapseEditor: () => void
 }
 
-export function Toolbar({ code, getShareUrl, editorCollapsed, onToggleEditor }: ToolbarProps) {
+export function Toolbar({ code, getShareUrl, editorCollapsed, onRestoreEditor, onCollapseEditor }: ToolbarProps) {
   const [isSharing, setIsSharing] = useState(false)
+  const isSharingRef = useRef(false)
 
   const handleShare = useCallback(async () => {
-    if (!code.trim() || isSharing) return
+    if (!code.trim() || isSharingRef.current) return
 
+    isSharingRef.current = true
     setIsSharing(true)
     try {
       const longUrl = await getShareUrl(code)
@@ -37,9 +40,10 @@ export function Toolbar({ code, getShareUrl, editorCollapsed, onToggleEditor }: 
     } catch {
       toast.error('Failed to generate share link')
     } finally {
+      isSharingRef.current = false
       setIsSharing(false)
     }
-  }, [code, getShareUrl, isSharing])
+  }, [code, getShareUrl])
 
   const handleOpenNewTab = useCallback(async () => {
     if (!code.trim()) return
@@ -52,7 +56,7 @@ export function Toolbar({ code, getShareUrl, editorCollapsed, onToggleEditor }: 
       <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={onToggleEditor}
+          onClick={editorCollapsed ? onRestoreEditor : onCollapseEditor}
           className="rounded-md bg-zinc-800 px-2 py-1 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-zinc-200"
           title={editorCollapsed ? 'Show editor' : 'Hide editor'}
         >
