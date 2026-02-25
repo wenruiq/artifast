@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Artifast Sandbox</title>
+
+    <!-- Tailwind CSS v4 Browser Runtime -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" crossorigin></script>
+
+    <!-- Non-React UMD libraries (no React dependency) -->
+    <script src="https://unpkg.com/d3@7/dist/d3.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin></script>
+    <script src="https://unpkg.com/lodash@4/lodash.min.js" crossorigin></script>
+
+    <!-- Babel Standalone (JSX transpilation) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
+
+    <!-- Import map: all React-ecosystem imports resolve to esm.sh -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.3.1",
+        "react/": "https://esm.sh/react@18.3.1/",
+        "react-dom": "https://esm.sh/react-dom@18.3.1",
+        "react-dom/": "https://esm.sh/react-dom@18.3.1/"
+      }
+    }
+    </script>
+
+    <style>
+      :root {
+        --background: 0 0% 100%;
+        --foreground: 240 10% 3.9%;
+        --card: 0 0% 100%;
+        --card-foreground: 240 10% 3.9%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 240 10% 3.9%;
+        --primary: 240 5.9% 10%;
+        --primary-foreground: 0 0% 98%;
+        --secondary: 240 4.8% 95.9%;
+        --secondary-foreground: 240 5.9% 10%;
+        --muted: 240 4.8% 95.9%;
+        --muted-foreground: 240 3.8% 46.1%;
+        --accent: 240 4.8% 95.9%;
+        --accent-foreground: 240 5.9% 10%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 240 5.9% 90%;
+        --input: 240 5.9% 90%;
+        --ring: 240 5.9% 10%;
+        --radius: 0.5rem;
+        --chart-1: 12 76% 61%;
+        --chart-2: 173 58% 39%;
+        --chart-3: 197 37% 24%;
+        --chart-4: 43 74% 66%;
+        --chart-5: 27 87% 67%;
+      }
+      .dark {
+        --background: 240 10% 3.9%;
+        --foreground: 0 0% 98%;
+        --card: 240 10% 3.9%;
+        --card-foreground: 0 0% 98%;
+        --popover: 240 10% 3.9%;
+        --popover-foreground: 0 0% 98%;
+        --primary: 0 0% 98%;
+        --primary-foreground: 240 5.9% 10%;
+        --secondary: 240 3.7% 15.9%;
+        --secondary-foreground: 0 0% 98%;
+        --muted: 240 3.7% 15.9%;
+        --muted-foreground: 240 5% 64.9%;
+        --accent: 240 3.7% 15.9%;
+        --accent-foreground: 0 0% 98%;
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 240 3.7% 15.9%;
+        --input: 240 3.7% 15.9%;
+        --ring: 240 4.9% 83.9%;
+      }
+      *, *::before, *::after { box-sizing: border-box; }
+      body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+      #root { min-height: 100vh; }
+      .sandbox-error {
+        padding: 16px;
+        color: #ef4444;
+        font-family: monospace;
+        white-space: pre-wrap;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="module">
+      // Load React ecosystem via ESM (single React instance for all libs)
+      import React from 'react';
+      import * as ReactDOM from 'react-dom';
+      import { createRoot } from 'react-dom/client';
+
+      // Parallel-load React-dependent libraries
+      const [LucideReact, Recharts, ShadcnUI] = await Promise.all([
+        import('https://esm.sh/lucide-react@0.460.0?external=react')
+          .catch(err => { console.warn('lucide-react failed to load:', err); return {}; }),
+        import('https://esm.sh/recharts@2.15.0?external=react,react-dom')
+          .catch(err => { console.warn('Recharts failed to load:', err); return {}; }),
+        import('https://cdn.jsdelivr.net/npm/shadcdn@0.0.8/+esm')
+          .catch(err => { console.warn('shadcn/UI failed to load:', err); return {}; }),
+      ]);
+
+      // Expose as globals for new Function() scope
+      window.React = React;
+      window.ReactDOM = ReactDOM;
+      window.LucideReact = LucideReact;
+      window.Recharts = Recharts;
+      window.ShadcnUI = ShadcnUI;
+
+      const rootEl = document.getElementById('root');
+      let reactRoot = null;
+
+      // ErrorBoundary
+      class ErrorBoundary extends React.Component {
+        constructor(props) {
+          super(props);
+          this.state = { error: null };
+        }
+        static getDerivedStateFromError(error) {
+          return { error };
+        }
+        componentDidCatch(error) {
+          window.parent.postMessage(
+            { type: 'render-error', error: error.message || String(error) },
+            '*'
+          );
+        }
+        render() {
+          if (this.state.error) {
+            return React.createElement(
+              'div',
+              { className: 'sandbox-error' },
+              'Runtime Error: ' + (this.state.error.message || String(this.state.error))
+            );
+          }
+          return this.props.children;
+        }
+      }
+
+      function clearRoot() {
+        if (reactRoot) {
+          reactRoot.unmount();
+          reactRoot = null;
+        }
+        rootEl.innerHTML = '';
+      }
+
+      function handleRender(data) {
+        // Unmount old component first so stale UI never persists on error
+        clearRoot();
+
+        try {
+          const transformed = Babel.transform(data.code, {
+            presets: ['react'],
+            filename: 'artifact.tsx',
+          }).code;
+
+          const fn = new Function(
+            'React',
+            'ReactDOM',
+            'LucideReact',
+            'Recharts',
+            'd3',
+            'THREE',
+            '_',
+            'ShadcnUI',
+            transformed + '\nreturn ' + data.componentName + ';'
+          );
+
+          const Component = fn(
+            React,
+            ReactDOM,
+            LucideReact,
+            Recharts,
+            window.d3 || {},
+            window.THREE || {},
+            window._ || function(){},
+            ShadcnUI
+          );
+
+          if (!Component) {
+            throw new Error('Component "' + data.componentName + '" not found in code');
+          }
+
+          reactRoot = createRoot(rootEl);
+
+          reactRoot.render(
+            React.createElement(ErrorBoundary, { key: Date.now() },
+              React.createElement(Component)
+            )
+          );
+
+          window.parent.postMessage({ type: 'render-success' }, '*');
+        } catch (err) {
+          const errorType = err.message && err.message.includes('Unexpected token')
+            ? 'transpile-error'
+            : 'render-error';
+          window.parent.postMessage(
+            { type: errorType, error: err.message || String(err) },
+            '*'
+          );
+        }
+      }
+
+      window.addEventListener('message', (event) => {
+        if (!event.data || typeof event.data.type !== 'string') return;
+
+        if (event.data.type === 'render') {
+          handleRender(event.data);
+        } else if (event.data.type === 'clear') {
+          clearRoot();
+          window.parent.postMessage({ type: 'render-success' }, '*');
+        }
+      });
+
+      // All libraries loaded — signal ready
+      window.parent.postMessage({ type: 'ready' }, '*');
+    </script>
+  </body>
+</html>
