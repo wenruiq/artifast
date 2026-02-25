@@ -15,6 +15,7 @@ import { rewriteImports } from '../lib/import-rewriter'
 
 export function CreatorPage() {
   const [rawCode, setRawCode] = useState('')
+  const [editorCollapsed, setEditorCollapsed] = useState(false)
   const [errorDismissed, setErrorDismissed] = useState(false)
   const [prevError, setPrevError] = useState<string | null>(null)
   const debouncedCode = useDebouncedCode(rawCode)
@@ -90,15 +91,28 @@ export function CreatorPage() {
     setErrorDismissed(true)
   }, [])
 
+  const handleToggleEditor = useCallback(() => {
+    setEditorCollapsed((prev) => !prev)
+  }, [])
+
   return (
     <div className="flex h-screen flex-col bg-zinc-950">
-      <Toolbar code={rawCode} getShareUrl={getShareUrl} />
+      <Toolbar
+        code={rawCode}
+        getShareUrl={getShareUrl}
+        editorCollapsed={editorCollapsed}
+        onToggleEditor={handleToggleEditor}
+      />
       {!isHtml && <ImportWarnings warnings={warnings} />}
       <div className="flex min-h-0 flex-1">
-        <div className="w-1/2 border-r border-zinc-800">
+        <div
+          className={`border-r border-zinc-800 transition-all duration-300 ${
+            editorCollapsed ? 'w-0 overflow-hidden' : 'w-1/2'
+          }`}
+        >
           <CodeEditor code={rawCode} onChange={handleCodeChange} />
         </div>
-        <div className="w-1/2">
+        <div className={`transition-all duration-300 ${editorCollapsed ? 'w-full' : 'w-1/2'}`}>
           <PreviewFrame
             iframeRef={iframeRef}
             isReady={isReady}
