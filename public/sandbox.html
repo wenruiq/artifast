@@ -12,6 +12,14 @@
     <script src="https://unpkg.com/d3@7/dist/d3.min.js" crossorigin></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin></script>
     <script src="https://unpkg.com/lodash@4/lodash.min.js" crossorigin></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js" crossorigin></script>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" crossorigin></script>
+    <script src="https://cdn.jsdelivr.net/npm/tone@15/build/Tone.min.js" crossorigin></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5/papaparse.min.js" crossorigin></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18/dist/xlsx.full.min.js" crossorigin></script>
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1/mammoth.browser.min.js" crossorigin></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjs@13/lib/browser/math.min.js" crossorigin></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4/dist/tf.min.js" crossorigin></script>
 
     <!-- Babel Standalone (JSX transpilation) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
@@ -114,6 +122,14 @@
       window.LucideReact = LucideReact;
       window.Recharts = Recharts;
       window.ShadcnUI = ShadcnUI;
+      window.Chart = window.Chart || {};
+      window.Plotly = window.Plotly || {};
+      window.Tone = window.Tone || {};
+      window.Papa = window.Papa || {};
+      window.XLSX = window.XLSX || {};
+      window.mammoth = window.mammoth || {};
+      window.math = window.math || {};
+      window.tf = window.tf || {};
 
       const rootEl = document.getElementById('root');
       let reactRoot = null;
@@ -159,7 +175,7 @@
 
         try {
           const transformed = Babel.transform(data.code, {
-            presets: ['react'],
+            presets: ['react', 'typescript'],
             filename: 'artifact.tsx',
           }).code;
 
@@ -172,6 +188,14 @@
             'THREE',
             '_',
             'ShadcnUI',
+            'Chart',
+            'Plotly',
+            'Tone',
+            'Papa',
+            'XLSX',
+            'mammoth',
+            'math',
+            'tf',
             transformed + '\nreturn ' + data.componentName + ';'
           );
 
@@ -183,7 +207,15 @@
             window.d3 || {},
             window.THREE || {},
             window._ || function(){},
-            ShadcnUI
+            ShadcnUI,
+            window.Chart || {},
+            window.Plotly || {},
+            window.Tone || {},
+            window.Papa || {},
+            window.XLSX || {},
+            window.mammoth || {},
+            window.math || {},
+            window.tf || {}
           );
 
           if (!Component) {

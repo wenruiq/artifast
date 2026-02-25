@@ -73,6 +73,87 @@ export const LIBRARY_REGISTRY: ReadonlyMap<string, LibraryMapping> = new Map([
       version: '4.x',
     },
   ],
+  [
+    'chart.js',
+    {
+      packageName: 'chart.js',
+      globalName: 'Chart',
+      cdnUrl: 'https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js',
+      version: '4.x',
+    },
+  ],
+  [
+    'chart.js/auto',
+    {
+      packageName: 'chart.js/auto',
+      globalName: 'Chart',
+      cdnUrl: '',
+      version: '4.x',
+    },
+  ],
+  [
+    'plotly.js-dist-min',
+    {
+      packageName: 'plotly.js-dist-min',
+      globalName: 'Plotly',
+      cdnUrl: 'https://cdn.plot.ly/plotly-2.35.2.min.js',
+      version: '2.35.x',
+    },
+  ],
+  [
+    'tone',
+    {
+      packageName: 'tone',
+      globalName: 'Tone',
+      cdnUrl: 'https://cdn.jsdelivr.net/npm/tone@15/build/Tone.min.js',
+      version: '15.x',
+    },
+  ],
+  [
+    'papaparse',
+    {
+      packageName: 'papaparse',
+      globalName: 'Papa',
+      cdnUrl: 'https://cdn.jsdelivr.net/npm/papaparse@5/papaparse.min.js',
+      version: '5.x',
+    },
+  ],
+  [
+    'xlsx',
+    {
+      packageName: 'xlsx',
+      globalName: 'XLSX',
+      cdnUrl: 'https://cdn.jsdelivr.net/npm/xlsx@0.18/dist/xlsx.full.min.js',
+      version: '0.18.x',
+    },
+  ],
+  [
+    'mammoth',
+    {
+      packageName: 'mammoth',
+      globalName: 'mammoth',
+      cdnUrl: 'https://cdn.jsdelivr.net/npm/mammoth@1/mammoth.browser.min.js',
+      version: '1.x',
+    },
+  ],
+  [
+    'mathjs',
+    {
+      packageName: 'mathjs',
+      globalName: 'math',
+      cdnUrl: 'https://cdn.jsdelivr.net/npm/mathjs@13/lib/browser/math.min.js',
+      version: '13.x',
+    },
+  ],
+  [
+    '@tensorflow/tfjs',
+    {
+      packageName: '@tensorflow/tfjs',
+      globalName: 'tf',
+      cdnUrl: 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4/dist/tf.min.js',
+      version: '4.x',
+    },
+  ],
 ])
 
 const SHADCN_PATTERN = /^@\/components\/ui\//
@@ -105,4 +186,12 @@ export const SUPPORTED_LIBRARY_NAMES = [
   'D3',
   'Three.js',
   'Lodash',
+  'Chart.js',
+  'Plotly',
+  'Tone.js',
+  'Papaparse',
+  'SheetJS',
+  'mammoth',
+  'mathjs',
+  'TensorFlow.js',
 ] as const
