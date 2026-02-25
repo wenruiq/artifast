@@ -1,26 +1,12 @@
 import { useCallback } from 'react'
 
-const PLACEHOLDER = `// Paste your React code here...
-// Example:
-import { useState } from 'react'
-import { Search } from 'lucide-react'
-
-function App() {
-  const [query, setQuery] = useState('')
-  return (
-    <div className="p-8">
-      <div className="flex items-center gap-2">
-        <Search className="w-5 h-5" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="border rounded px-3 py-1"
-          placeholder="Search..."
-        />
-      </div>
-    </div>
-  )
-}`
+const PLACEHOLDER = `// Paste your React component here...
+//
+// Supports: Tailwind, shadcn/ui, Recharts, Lucide,
+// D3, Three.js, Lodash, Chart.js, Plotly, Tone.js,
+// Papaparse, SheetJS, mammoth, mathjs, TensorFlow.js
+//
+// Just import and use — all libraries are pre-loaded.`
 
 interface CodeEditorProps {
   readonly code: string
