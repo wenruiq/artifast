@@ -20,15 +20,25 @@ function CopyIcon({ className }: { readonly className?: string }) {
   )
 }
 
-const PREFIX_PROMPT = `Write a single-file React component (default export) for a sandbox with these pre-installed libraries:
+const PREFIX_PROMPT = `Generate a single-file UI demo (React component with default export, or plain HTML). The sandbox has these libraries pre-installed — just import and use as needed:
 
-React 18, Tailwind CSS v4, shadcn/ui (import from "@/components/ui/*"), Recharts, Lucide React (import { Icon } from "lucide-react"), D3.js, Three.js, Lodash, Chart.js (import from "chart.js/auto"), Plotly, Tone.js, Papaparse, SheetJS (xlsx), mammoth, mathjs, TensorFlow.js (@tensorflow/tfjs).
+- Tailwind CSS v4
+- shadcn/ui (import from "@/components/ui/*")
+- Recharts
+- Lucide React (import { IconName } from "lucide-react")
+- D3.js
+- Three.js (standalone only — no @react-three/fiber or OrbitControls)
+- Lodash
+- Chart.js (import from "chart.js/auto")
+- Plotly
+- Tone.js
+- Papaparse
+- SheetJS (import from "xlsx")
+- mammoth
+- mathjs
+- TensorFlow.js (import from "@tensorflow/tfjs")
 
-Guidelines:
-- Default-export one functional component
-- Use Tailwind for styling (no CSS files)
-- Use inline/mock data (no fetch or external APIs)
-- TypeScript is supported`
+Use inline or mock data — no external API calls.`
 
 // rerender-memo: static content that never changes, skip all parent re-renders
 export const LibraryBadgeList = memo(function LibraryBadgeList() {

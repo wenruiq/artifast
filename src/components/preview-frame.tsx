@@ -3,15 +3,18 @@ import type { RefObject } from 'react'
 interface PreviewFrameProps {
   readonly iframeRef: RefObject<HTMLIFrameElement | null>
   readonly isReady: boolean
-  readonly isHtmlMode?: boolean
+  readonly hasContent: boolean
+  readonly hasError: boolean
 }
 
 export function PreviewFrame({
   iframeRef,
   isReady,
-  isHtmlMode = false,
+  hasContent,
+  hasError,
 }: PreviewFrameProps) {
-  const showLoading = !isReady && !isHtmlMode
+  const showLoading = !isReady
+  const showPlaceholder = isReady && !hasContent
 
   return (
     <div className="relative h-full w-full bg-zinc-900">
@@ -23,13 +26,22 @@ export function PreviewFrame({
           </div>
         </div>
       )}
+      {showPlaceholder && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center">
+          <p className="text-sm text-zinc-600">
+            {hasError
+              ? 'Fix the error to see the preview'
+              : 'Paste code on the left to preview'}
+          </p>
+        </div>
+      )}
       <iframe
         ref={iframeRef}
         src="/sandbox.html"
         sandbox="allow-scripts allow-same-origin"
         title="Artifact Preview"
         className={`h-full w-full border-0 transition-opacity duration-300 ${
-          isReady || isHtmlMode ? 'opacity-100' : 'opacity-0'
+          hasContent ? 'opacity-100' : 'opacity-0'
         }`}
       />
     </div>

@@ -4,6 +4,7 @@ import type { ParentMessage, SandboxMessage } from '../types'
 interface SandboxState {
   readonly iframeRef: React.RefObject<HTMLIFrameElement | null>
   readonly isReady: boolean
+  readonly hasContent: boolean
   readonly error: string | null
   readonly errorType: 'render-error' | 'transpile-error' | null
   readonly sendRender: (code: string, componentName: string) => void
@@ -14,6 +15,7 @@ interface SandboxState {
 export function useSandbox(): SandboxState {
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const [isReady, setIsReady] = useState(false)
+  const [hasContent, setHasContent] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [errorType, setErrorType] = useState<
     'render-error' | 'transpile-error' | null
@@ -41,14 +43,17 @@ export function useSandbox(): SandboxState {
           }
           break
         case 'render-success':
+          setHasContent(true)
           setError(null)
           setErrorType(null)
           break
         case 'render-error':
+          setHasContent(false)
           setError(data.error)
           setErrorType('render-error')
           break
         case 'transpile-error':
+          setHasContent(false)
           setError(data.error)
           setErrorType('transpile-error')
           break
@@ -97,6 +102,7 @@ export function useSandbox(): SandboxState {
     htmlModeRef.current = true
     pendingRef.current = null
     iframe.srcdoc = html
+    setHasContent(true)
     setError(null)
     setErrorType(null)
   }, [])
@@ -108,6 +114,7 @@ export function useSandbox(): SandboxState {
       iframeRef.current.contentWindow.postMessage({ type: 'clear' }, '*')
     }
     pendingRef.current = null
+    setHasContent(false)
     setError(null)
     setErrorType(null)
   }, [restoreSandbox])
@@ -115,6 +122,7 @@ export function useSandbox(): SandboxState {
   return {
     iframeRef,
     isReady,
+    hasContent,
     error,
     errorType,
     sendRender,

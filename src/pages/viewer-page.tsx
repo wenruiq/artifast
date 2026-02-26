@@ -10,8 +10,15 @@ import { rewriteImports } from '../lib/import-rewriter'
 
 export function ViewerPage() {
   const { codeFromHash } = useUrlHash()
-  const { iframeRef, isReady, error, errorType, sendRender, sendHtml } =
-    useSandbox()
+  const {
+    iframeRef,
+    isReady,
+    hasContent,
+    error,
+    errorType,
+    sendRender,
+    sendHtml,
+  } = useSandbox()
 
   const isHtml = useMemo(
     () => (codeFromHash ? isHtmlDocument(codeFromHash) : false),
@@ -54,7 +61,8 @@ export function ViewerPage() {
       <PreviewFrame
         iframeRef={iframeRef}
         isReady={isReady}
-        isHtmlMode={isHtml}
+        hasContent={hasContent}
+        hasError={error !== null}
       />
       <ErrorPanel error={error} errorType={errorType} />
     </div>

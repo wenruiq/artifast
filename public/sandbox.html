@@ -86,7 +86,7 @@
         --ring: 240 4.9% 83.9%;
       }
       *, *::before, *::after { box-sizing: border-box; }
-      body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+      body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background-color: #fff; color: #000; }
       #root { min-height: 100vh; }
       .sandbox-error {
         padding: 16px;
@@ -249,7 +249,6 @@
           handleRender(event.data);
         } else if (event.data.type === 'clear') {
           clearRoot();
-          window.parent.postMessage({ type: 'render-success' }, '*');
         }
       });
 

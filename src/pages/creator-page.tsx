@@ -24,6 +24,7 @@ export function CreatorPage() {
     isReady,
     error,
     errorType,
+    hasContent,
     sendRender,
     sendHtml,
     sendClear,
@@ -134,7 +135,8 @@ export function CreatorPage() {
           <PreviewFrame
             iframeRef={iframeRef}
             isReady={isReady}
-            isHtmlMode={isHtml}
+            hasContent={hasContent}
+            hasError={error !== null}
           />
         </div>
       </div>
