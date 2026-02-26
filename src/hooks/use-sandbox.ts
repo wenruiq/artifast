@@ -22,6 +22,7 @@ export function useSandbox(): SandboxState {
   >(null)
   const pendingRef = useRef<ParentMessage | null>(null)
   const htmlModeRef = useRef(false)
+  const blobUrlRef = useRef<string | null>(null)
   // rerender-defer-reads: use ref so callbacks don't depend on isReady state
   const isReadyRef = useRef(false)
 
@@ -64,16 +65,23 @@ export function useSandbox(): SandboxState {
     return () => window.removeEventListener('message', onMessage)
   }, [])
 
+  const revokeBlobUrl = useCallback(() => {
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current)
+      blobUrlRef.current = null
+    }
+  }, [])
+
   const restoreSandbox = useCallback(() => {
     const iframe = iframeRef.current
     if (!iframe) return
 
+    revokeBlobUrl()
     htmlModeRef.current = false
     isReadyRef.current = false
-    iframe.removeAttribute('srcdoc')
     iframe.src = '/sandbox.html'
     setIsReady(false)
-  }, [])
+  }, [revokeBlobUrl])
 
   const sendRender = useCallback(
     (code: string, componentName: string) => {
@@ -99,13 +107,21 @@ export function useSandbox(): SandboxState {
     const iframe = iframeRef.current
     if (!iframe) return
 
+    revokeBlobUrl()
     htmlModeRef.current = true
     pendingRef.current = null
-    iframe.srcdoc = html
+
+    // Use blob: URL instead of srcdoc so the iframe gets its own opaque
+    // origin.  With srcdoc + allow-same-origin the iframe shares the
+    // parent origin, so <a href="#"> clicks wipe the parent hash.
+    const blob = new Blob([html], { type: 'text/html' })
+    blobUrlRef.current = URL.createObjectURL(blob)
+    iframe.src = blobUrlRef.current
+
     setHasContent(true)
     setError(null)
     setErrorType(null)
-  }, [])
+  }, [revokeBlobUrl])
 
   const sendClear = useCallback(() => {
     if (htmlModeRef.current) {

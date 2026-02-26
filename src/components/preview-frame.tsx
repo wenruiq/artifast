@@ -13,8 +13,8 @@ export function PreviewFrame({
   hasContent,
   hasError,
 }: PreviewFrameProps) {
-  const showLoading = !isReady
-  const showPlaceholder = isReady && !hasContent
+  const showLoading = !isReady && !hasContent
+  const showPlaceholder = !showLoading && !hasContent
 
   return (
     <div className="relative h-full w-full bg-zinc-900">
