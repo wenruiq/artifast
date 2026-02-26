@@ -9,7 +9,7 @@ import { findComponentName } from '../lib/component-finder'
 import { rewriteImports } from '../lib/import-rewriter'
 
 export function ViewerPage() {
-  const { codeFromHash } = useUrlHash()
+  const { codeFromHash, isLoading } = useUrlHash()
   const {
     iframeRef,
     isReady,
@@ -48,10 +48,18 @@ export function ViewerPage() {
     }
   }, [codeFromHash, isHtml, transformedResult, sendRender, sendHtml])
 
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-zinc-950 text-zinc-400">
+        Loading artifact...
+      </div>
+    )
+  }
+
   if (!codeFromHash) {
     return (
       <div className="flex h-screen items-center justify-center bg-zinc-950 text-zinc-400">
-        Invalid or empty artifact link.
+        Invalid or expired artifact link.
       </div>
     )
   }
