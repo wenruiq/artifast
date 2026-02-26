@@ -15,7 +15,14 @@ import { isHtmlDocument } from '../lib/html-detector'
 import { rewriteImports } from '../lib/import-rewriter'
 
 export function CreatorPage() {
-  const [rawCode, setRawCode] = useState('')
+  const [rawCode, setRawCode] = useState(() => {
+    const remix = sessionStorage.getItem('artifast-remix')
+    if (remix) {
+      sessionStorage.removeItem('artifast-remix')
+      return remix
+    }
+    return ''
+  })
   const [errorDismissed, setErrorDismissed] = useState(false)
   const [prevError, setPrevError] = useState<string | null>(null)
   const debouncedCode = useDebouncedCode(rawCode)

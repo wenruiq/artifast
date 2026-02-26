@@ -1,10 +1,17 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { Redis } from '@upstash/redis'
+import { Ratelimit } from '@upstash/ratelimit'
 import { nanoid } from 'nanoid'
 
-const TTL_SECONDS = 90 * 24 * 60 * 60
-
 const MAX_CODE_SIZE = 500_000
+
+const redis = Redis.fromEnv()
+
+const ratelimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(30, '1 h'),
+  prefix: 'ratelimit:share',
+})
 
 export default async function handler(
   req: VercelRequest,
@@ -16,7 +23,19 @@ export default async function handler(
   }
 
   try {
-    const redis = Redis.fromEnv()
+    const ip =
+      req.headers['x-forwarded-for']?.toString().split(',')[0]?.trim() ??
+      'anonymous'
+
+    const { success, remaining, reset } = await ratelimit.limit(ip)
+
+    res.setHeader('X-RateLimit-Remaining', remaining)
+    res.setHeader('X-RateLimit-Reset', reset)
+
+    if (!success) {
+      return res.status(429).json({ error: 'Too many requests' })
+    }
+
     const { code } = req.body as { code?: string }
 
     if (!code || typeof code !== 'string') {
@@ -28,7 +47,7 @@ export default async function handler(
     }
 
     const id = nanoid(12)
-    await redis.set(`paste:${id}`, code, { ex: TTL_SECONDS })
+    await redis.set(`paste:${id}`, code)
 
     return res.status(201).json({ id })
   } catch (error) {

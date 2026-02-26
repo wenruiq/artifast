@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { ErrorPanel } from '../components/error-panel'
 import { PreviewFrame } from '../components/preview-frame'
 import { useSandbox } from '../hooks/use-sandbox'
@@ -48,6 +48,13 @@ export function ViewerPage() {
     }
   }, [codeFromHash, isHtml, transformedResult, sendRender, sendHtml])
 
+  const handleRemix = useCallback(() => {
+    if (codeFromHash) {
+      sessionStorage.setItem('artifast-remix', codeFromHash)
+      window.location.hash = ''
+    }
+  }, [codeFromHash])
+
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-zinc-950 text-zinc-400">
@@ -73,6 +80,13 @@ export function ViewerPage() {
         hasError={error !== null}
       />
       <ErrorPanel error={error} errorType={errorType} />
+      <button
+        type="button"
+        onClick={handleRemix}
+        className="fixed bottom-3 left-3 z-50 rounded-md bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-200 opacity-60 transition-all hover:bg-zinc-700 hover:opacity-100"
+      >
+        Remix
+      </button>
     </div>
   )
 }
