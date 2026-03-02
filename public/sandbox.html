@@ -112,7 +112,7 @@
           .catch(err => { console.warn('lucide-react failed to load:', err); return {}; }),
         import('https://esm.sh/recharts@2.15.0?external=react,react-dom')
           .catch(err => { console.warn('Recharts failed to load:', err); return {}; }),
-        import('https://cdn.jsdelivr.net/npm/shadcdn@0.0.8/+esm')
+        import('https://esm.sh/shadcdn@0.0.8?external=react,react-dom')
           .catch(err => { console.warn('shadcn/UI failed to load:', err); return {}; }),
       ]);
 
