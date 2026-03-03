@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { PasteSizeExceededError } from '../lib/paste-api'
 
 interface ToolbarProps {
   readonly code: string
@@ -22,8 +23,10 @@ export function Toolbar({ code, getShareUrl, editorCollapsed, onRestoreEditor, o
       const shareUrl = await getShareUrl(code)
       await navigator.clipboard.writeText(shareUrl)
       toast.success('Link copied to clipboard')
-    } catch {
-      toast.error('Failed to generate share link')
+    } catch (error) {
+      toast.error(error instanceof PasteSizeExceededError
+        ? 'Code is too large to share (max 500 KB)'
+        : 'Failed to generate share link')
     } finally {
       isSharingRef.current = false
       setIsSharing(false)
@@ -35,8 +38,10 @@ export function Toolbar({ code, getShareUrl, editorCollapsed, onRestoreEditor, o
     try {
       const url = await getShareUrl(code)
       window.open(url, '_blank')
-    } catch {
-      toast.error('Failed to generate preview link')
+    } catch (error) {
+      toast.error(error instanceof PasteSizeExceededError
+        ? 'Code is too large to share (max 500 KB)'
+        : 'Failed to generate preview link')
     }
   }, [code, getShareUrl])
 

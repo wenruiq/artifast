@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { compressCode, decompressCode } from '../lib/url-codec'
-import { createPaste, fetchPaste } from '../lib/paste-api'
+import { createPaste, fetchPaste, PasteSizeExceededError } from '../lib/paste-api'
 
 const PASTE_PREFIX = 'p:'
 
@@ -81,7 +81,8 @@ export function useUrlHash(): UrlHashState {
     try {
       const id = await createPaste(code)
       return `${window.location.origin}${window.location.pathname}#${PASTE_PREFIX}${id}`
-    } catch {
+    } catch (error) {
+      if (error instanceof PasteSizeExceededError) throw error
       const compressed = await compressCode(code)
       return `${window.location.origin}${window.location.pathname}#${compressed}`
     }

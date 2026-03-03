@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { createHash } from 'node:crypto'
 import { Redis } from '@upstash/redis'
 import { Ratelimit } from '@upstash/ratelimit'
 import { nanoid } from 'nanoid'
@@ -46,8 +47,22 @@ export default async function handler(
       return res.status(413).json({ error: 'Code exceeds maximum size' })
     }
 
+    const sha256 = createHash('sha256').update(code).digest('hex')
+    const hashKey = `hash:${sha256}`
+
+    const existingId = await redis.get<string>(hashKey)
+    if (existingId) {
+      const pasteExists = await redis.exists(`paste:${existingId}`)
+      if (pasteExists) {
+        return res.status(200).json({ id: existingId })
+      }
+    }
+
     const id = nanoid(12)
-    await redis.set(`paste:${id}`, code)
+    const pipe = redis.pipeline()
+    pipe.set(`paste:${id}`, code)
+    pipe.set(hashKey, id)
+    await pipe.exec()
 
     return res.status(201).json({ id })
   } catch (error) {

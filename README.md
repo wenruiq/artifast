@@ -8,7 +8,7 @@ Paste JSX/TSX or raw HTML into the editor, get a live preview. Share via URL. Re
 
 Code entered in the editor is sent to a sandboxed iframe (`public/sandbox.html`) via `postMessage`. The sandbox transpiles JSX/TSX with **Babel Standalone**, wraps the component in an error boundary, and renders it — all client-side with no server round-trip.
 
-Sharing uses **Upstash Redis** (via Vercel serverless functions) as a pastebin. Pastes are stored with a 90-day TTL and accessed via `#p:{id}` URL hashes. A client-side compression fallback (`deflate-raw` + base64url in the hash) is used if the API is unreachable.
+Sharing uses **Upstash Redis** (via Vercel serverless functions) as a pastebin. Pastes are accessed via `#p:{id}` URL hashes. A client-side compression fallback (`deflate-raw` + base64url in the hash) is used if the API is unreachable.
 
 ## Tech Stack
 
