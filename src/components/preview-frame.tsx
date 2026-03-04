@@ -40,7 +40,7 @@ export function PreviewFrame({
         src="/sandbox.html"
         sandbox="allow-scripts allow-same-origin"
         title="Artifact Preview"
-        className={`h-full w-full border-0 transition-opacity duration-300 ${
+        className={`h-full w-full border-0 bg-white transition-opacity duration-300 ${
           hasContent ? 'opacity-100' : 'opacity-0'
         }`}
       />

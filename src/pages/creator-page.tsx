@@ -36,7 +36,7 @@ export function CreatorPage() {
     sendHtml,
     sendClear,
   } = useSandbox()
-  const { getShareUrl } = useUrlHash()
+  const { getShareUrl, getCachedShareUrl } = useUrlHash()
   const {
     widthPercent,
     isCollapsed,
@@ -114,6 +114,7 @@ export function CreatorPage() {
       <Toolbar
         code={rawCode}
         getShareUrl={getShareUrl}
+        getCachedShareUrl={getCachedShareUrl}
         editorCollapsed={isCollapsed}
         onRestoreEditor={restore}
         onCollapseEditor={collapse}

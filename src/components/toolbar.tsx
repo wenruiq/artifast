@@ -1,50 +1,16 @@
-import { useCallback, useRef, useState } from 'react'
-import { toast } from 'sonner'
-import { PasteSizeExceededError } from '../lib/paste-api'
+import type { ShareResult } from '../hooks/use-url-hash'
+import { ShareDialog } from './share-dialog'
 
 interface ToolbarProps {
   readonly code: string
-  readonly getShareUrl: (code: string) => Promise<string>
+  readonly getShareUrl: (code: string) => Promise<ShareResult>
+  readonly getCachedShareUrl: (code: string) => ShareResult | null
   readonly editorCollapsed: boolean
   readonly onRestoreEditor: () => void
   readonly onCollapseEditor: () => void
 }
 
-export function Toolbar({ code, getShareUrl, editorCollapsed, onRestoreEditor, onCollapseEditor }: ToolbarProps) {
-  const [isSharing, setIsSharing] = useState(false)
-  const isSharingRef = useRef(false)
-
-  const handleShare = useCallback(async () => {
-    if (!code.trim() || isSharingRef.current) return
-
-    isSharingRef.current = true
-    setIsSharing(true)
-    try {
-      const shareUrl = await getShareUrl(code)
-      await navigator.clipboard.writeText(shareUrl)
-      toast.success('Link copied to clipboard')
-    } catch (error) {
-      toast.error(error instanceof PasteSizeExceededError
-        ? 'Code is too large to share (max 500 KB)'
-        : 'Failed to generate share link')
-    } finally {
-      isSharingRef.current = false
-      setIsSharing(false)
-    }
-  }, [code, getShareUrl])
-
-  const handleOpenNewTab = useCallback(async () => {
-    if (!code.trim()) return
-    try {
-      const url = await getShareUrl(code)
-      window.open(url, '_blank')
-    } catch (error) {
-      toast.error(error instanceof PasteSizeExceededError
-        ? 'Code is too large to share (max 500 KB)'
-        : 'Failed to generate preview link')
-    }
-  }, [code, getShareUrl])
-
+export function Toolbar({ code, getShareUrl, getCachedShareUrl, editorCollapsed, onRestoreEditor, onCollapseEditor }: ToolbarProps) {
   return (
     <header className="flex h-12 items-center justify-between border-b border-zinc-800 bg-zinc-950 px-4">
       <div className="flex items-center gap-2">
@@ -61,23 +27,7 @@ export function Toolbar({ code, getShareUrl, editorCollapsed, onRestoreEditor, o
         </h1>
       </div>
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={handleShare}
-          disabled={!code.trim() || isSharing}
-          className="rounded-md bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-200 transition-colors hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          {isSharing ? 'Sharing...' : 'Share'}
-        </button>
-        <button
-          type="button"
-          onClick={handleOpenNewTab}
-          disabled={!code.trim()}
-          className="rounded-md bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-200 transition-colors hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
-          title="Open in new tab"
-        >
-          ↗
-        </button>
+        <ShareDialog code={code} getShareUrl={getShareUrl} getCachedShareUrl={getCachedShareUrl} />
       </div>
     </header>
   )

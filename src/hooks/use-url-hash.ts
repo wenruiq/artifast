@@ -1,14 +1,20 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { compressCode, decompressCode } from '../lib/url-codec'
 import { createPaste, fetchPaste, PasteSizeExceededError } from '../lib/paste-api'
 
 const PASTE_PREFIX = 'p:'
 
+export interface ShareResult {
+  readonly url: string
+  readonly existing: boolean
+}
+
 interface UrlHashState {
   readonly isViewerMode: boolean
   readonly codeFromHash: string | null
   readonly isLoading: boolean
-  readonly getShareUrl: (code: string) => Promise<string>
+  readonly getShareUrl: (code: string) => Promise<ShareResult>
+  readonly getCachedShareUrl: (code: string) => ShareResult | null
 }
 
 function readHash(): string {
@@ -28,6 +34,8 @@ export function useUrlHash(): UrlHashState {
   const [codeFromHash, setCodeFromHash] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [prevHash, setPrevHash] = useState('')
+  const shareCacheRef = useRef(new Map<string, ShareResult>())
+  const inflightRef = useRef(new Map<string, Promise<ShareResult>>())
 
   useEffect(() => {
     function onHashChange() {
@@ -77,16 +85,36 @@ export function useUrlHash(): UrlHashState {
     }
   }, [hash])
 
-  const getShareUrl = useCallback(async (code: string) => {
-    try {
-      const id = await createPaste(code)
-      return `${window.location.origin}${window.location.pathname}#${PASTE_PREFIX}${id}`
-    } catch (error) {
-      if (error instanceof PasteSizeExceededError) throw error
-      const compressed = await compressCode(code)
-      return `${window.location.origin}${window.location.pathname}#${compressed}`
-    }
+  const getShareUrl = useCallback((code: string): Promise<ShareResult> => {
+    const cached = shareCacheRef.current.get(code)
+    if (cached) return Promise.resolve(cached)
+
+    const inflight = inflightRef.current.get(code)
+    if (inflight) return inflight
+
+    const promise = (async (): Promise<ShareResult> => {
+      try {
+        const result = await createPaste(code)
+        const url = `${window.location.origin}${window.location.pathname}#${PASTE_PREFIX}${result.id}`
+        const shareResult: ShareResult = { url, existing: result.existing }
+        shareCacheRef.current.set(code, shareResult)
+        return shareResult
+      } catch (error) {
+        if (error instanceof PasteSizeExceededError) throw error
+        const compressed = await compressCode(code)
+        return { url: `${window.location.origin}${window.location.pathname}#${compressed}`, existing: false }
+      } finally {
+        inflightRef.current.delete(code)
+      }
+    })()
+
+    inflightRef.current.set(code, promise)
+    return promise
   }, [])
 
-  return { isViewerMode, codeFromHash, isLoading, getShareUrl }
+  const getCachedShareUrl = useCallback((code: string): ShareResult | null => {
+    return shareCacheRef.current.get(code) ?? null
+  }, [])
+
+  return { isViewerMode, codeFromHash, isLoading, getShareUrl, getCachedShareUrl }
 }

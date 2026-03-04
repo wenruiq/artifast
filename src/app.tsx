@@ -20,7 +20,7 @@ export function App() {
       {isViewerMode ? <ViewerPage /> : <CreatorPage />}
       <Toaster
         theme="dark"
-        position="bottom-center"
+        position="top-center"
         toastOptions={TOAST_OPTIONS}
       />
     </>

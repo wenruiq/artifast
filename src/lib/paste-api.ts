@@ -6,6 +6,11 @@ interface PasteResponse {
   readonly code: string
 }
 
+export interface CreatePasteResult {
+  readonly id: string
+  readonly existing: boolean
+}
+
 export class PasteSizeExceededError extends Error {
   constructor() {
     super('Code is too large to share (max 500 KB)')
@@ -13,7 +18,7 @@ export class PasteSizeExceededError extends Error {
   }
 }
 
-export async function createPaste(code: string): Promise<string> {
+export async function createPaste(code: string): Promise<CreatePasteResult> {
   const response = await fetch('/api/share', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -29,7 +34,7 @@ export async function createPaste(code: string): Promise<string> {
   }
 
   const data = (await response.json()) as ShareResponse
-  return data.id
+  return { id: data.id, existing: response.status === 200 }
 }
 
 export async function fetchPaste(id: string): Promise<string | null> {
