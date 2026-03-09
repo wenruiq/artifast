@@ -1,7 +1,8 @@
 import { Check, ClipboardCopy } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { useShare } from "../hooks/use-share";
 import { PasteSizeExceededError } from "../lib/paste-api";
-import type { ShareResult } from "../hooks/use-url-hash";
+import { Button } from "./ui/button";
 import {
   Dialog,
   DialogContent,
@@ -12,19 +13,13 @@ import {
   DialogTrigger,
 } from "./ui/dialog";
 
-type DialogState =
-  | { status: "checking" }
-  | { status: "idle" }
-  | { status: "publishing" }
-  | { status: "published"; url: string; isExisting: boolean }
-  | { status: "error"; message: string };
-
 function Spinner({ className = "h-4 w-4" }: { readonly className?: string }) {
   return (
     <svg
+      aria-hidden="true"
       className={`${className} animate-spin`}
-      viewBox="0 0 16 16"
       fill="none"
+      viewBox="0 0 16 16"
     >
       <circle
         cx="8"
@@ -37,8 +32,8 @@ function Spinner({ className = "h-4 w-4" }: { readonly className?: string }) {
       <path
         d="M8 1.5A6.5 6.5 0 0 1 14.5 8"
         stroke="currentColor"
-        strokeWidth="3"
         strokeLinecap="round"
+        strokeWidth="3"
       />
     </svg>
   );
@@ -55,10 +50,14 @@ function CopyButton({ url }: { readonly url: string }) {
         setCopied(true);
         timerRef.current = setTimeout(() => setCopied(false), 2000);
       },
-      () => {},
+      () => {
+        // clipboard write rejected — ignore
+      }
     );
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
     };
   }, [url]);
 
@@ -66,22 +65,27 @@ function CopyButton({ url }: { readonly url: string }) {
     navigator.clipboard.writeText(url).then(
       () => {
         setCopied(true);
-        if (timerRef.current) clearTimeout(timerRef.current);
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+        }
         timerRef.current = setTimeout(() => setCopied(false), 2000);
       },
-      () => {},
+      () => {
+        // clipboard write rejected — ignore
+      }
     );
   }, [url]);
 
   return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      className={`flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+    <Button
+      className={
         copied
-          ? "bg-emerald-600/20 text-emerald-400"
-          : "bg-zinc-700 text-zinc-200 hover:bg-zinc-600"
-      }`}
+          ? "bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30"
+          : undefined
+      }
+      onClick={handleCopy}
+      size="xs"
+      variant="secondary"
     >
       {copied ? (
         <Check className="size-3.5" />
@@ -89,116 +93,97 @@ function CopyButton({ url }: { readonly url: string }) {
         <ClipboardCopy className="size-3.5" />
       )}
       {copied ? "Link copied" : "Copy link"}
-    </button>
+    </Button>
   );
 }
 
 interface ShareDialogProps {
   readonly code: string;
-  readonly getShareUrl: (code: string) => Promise<ShareResult>;
-  readonly getCachedShareUrl: (code: string) => ShareResult | null;
+  readonly data: ReturnType<typeof useShare>["data"];
+  readonly error: ReturnType<typeof useShare>["error"];
+  readonly getCachedUrl: ReturnType<typeof useShare>["getCachedUrl"];
+  readonly isError: boolean;
+  readonly isPending: boolean;
+  readonly isSuccess: boolean;
+  readonly prefetch: ReturnType<typeof useShare>["prefetch"];
+  readonly reset: ReturnType<typeof useShare>["reset"];
+  readonly share: ReturnType<typeof useShare>["share"];
 }
 
 export function ShareDialog({
   code,
-  getShareUrl,
-  getCachedShareUrl,
+  share,
+  prefetch,
+  getCachedUrl,
+  isPending,
+  isSuccess,
+  isError,
+  data,
+  error,
+  reset,
 }: ShareDialogProps) {
   const [open, setOpen] = useState(false);
-  const [state, setState] = useState<DialogState>({ status: "idle" });
 
-  // Prefetch on hover — warm the cache before click
   const handlePrefetch = useCallback(() => {
-    if (!code.trim() || getCachedShareUrl(code)) return;
-    getShareUrl(code).catch(() => {});
-  }, [code, getCachedShareUrl, getShareUrl]);
+    if (!code.trim()) {
+      return;
+    }
+    prefetch(code);
+  }, [code, prefetch]);
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
       setOpen(nextOpen);
-      if (nextOpen) {
-        const cached = getCachedShareUrl(code);
-        if (cached) {
-          setState({ status: "published", url: cached.url, isExisting: cached.existing });
-        } else {
-          setState({ status: "checking" });
-        }
-      } else {
-        setState({ status: "idle" });
+      if (!nextOpen) {
+        reset();
+        return;
       }
+      if (getCachedUrl(code) || isPending) {
+        return;
+      }
+      share(code).catch(() => {
+        // error handled by mutation state
+      });
     },
-    [code, getCachedShareUrl],
+    [code, getCachedUrl, share, reset, isPending]
   );
 
-  // Async fetch when entering "checking" state
-  useEffect(() => {
-    if (state.status !== "checking") return;
+  const handleRetry = useCallback(() => {
+    share(code).catch(() => {
+      // error handled by mutation state
+    });
+  }, [code, share]);
 
-    let cancelled = false;
+  const showLoading = isPending && open;
+  const url = data?.url ?? getCachedUrl(code)?.url;
+  const isExisting = data?.existing ?? getCachedUrl(code)?.existing ?? false;
+  const showPublished =
+    (isSuccess || getCachedUrl(code) !== null) && open && url;
+  const showError = isError && open;
 
-    getShareUrl(code).then(
-      (result) => {
-        if (!cancelled)
-          setState({
-            status: "published",
-            url: result.url,
-            isExisting: result.existing,
-          });
-      },
-      (error) => {
-        if (!cancelled) {
-          setState({
-            status: "error",
-            message:
-              error instanceof PasteSizeExceededError
-                ? "Code is too large to share (max 500 KB)"
-                : "Failed to create share link.",
-          });
-        }
-      },
-    );
-
-    return () => {
-      cancelled = true;
-    };
-  }, [state.status, code, getShareUrl]);
-
-  const handleRetry = useCallback(async () => {
-    setState({ status: "publishing" });
-    try {
-      const result = await getShareUrl(code);
-      setState({ status: "published", url: result.url, isExisting: result.existing });
-    } catch (error) {
-      setState({
-        status: "error",
-        message:
-          error instanceof PasteSizeExceededError
-            ? "Code is too large to share (max 500 KB)"
-            : "Failed to create share link.",
-      });
-    }
-  }, [code, getShareUrl]);
+  const errorMessage =
+    error instanceof PasteSizeExceededError
+      ? "Code is too large to share (max 500 KB)"
+      : "Failed to create share link.";
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog onOpenChange={handleOpenChange} open={open}>
       <DialogTrigger asChild>
-        <button
-          type="button"
+        <Button
           disabled={!code.trim()}
           onMouseEnter={handlePrefetch}
-          className="flex items-center gap-1.5 rounded-md bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-200 transition-colors hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          size="xs"
+          variant="secondary"
         >
           Share
-        </button>
+        </Button>
       </DialogTrigger>
 
       <DialogContent
-        showCloseButton={
-          state.status !== "checking" && state.status !== "publishing"
-        }
-        className="sm:max-w-md border-zinc-800 bg-zinc-900"
+        className="border-zinc-800 bg-zinc-900 sm:max-w-md"
+        showCloseButton={!showLoading}
       >
-        {(state.status === "checking" || state.status === "publishing") && (
+        {showLoading && (
           <>
             <DialogHeader>
               <DialogTitle>Share Artifact</DialogTitle>
@@ -210,12 +195,12 @@ export function ShareDialog({
           </>
         )}
 
-        {state.status === "published" && (
+        {showPublished && !showLoading && (
           <>
             <DialogHeader>
               <DialogTitle>Share Artifact</DialogTitle>
-              {state.isExisting ? (
-                <div className="mt-1 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-400">
+              {isExisting ? (
+                <div className="mt-1 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-emerald-400 text-xs">
                   Artifact already exists — link copied to clipboard.
                 </div>
               ) : (
@@ -227,39 +212,37 @@ export function ShareDialog({
             <div className="flex items-center gap-2">
               <div className="min-w-0 flex-1 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2">
                 <code className="block truncate text-xs text-zinc-300">
-                  {state.url}
+                  {url}
                 </code>
               </div>
-              <CopyButton url={state.url} />
+              <CopyButton url={url} />
             </div>
             <DialogFooter>
-              <button
-                type="button"
-                onClick={() => window.open(state.url, "_blank")}
-                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500"
+              <Button
+                className="bg-blue-600 text-white hover:bg-blue-500"
+                onClick={() => window.open(url, "_blank")}
               >
                 Open in New Tab
-              </button>
+              </Button>
             </DialogFooter>
           </>
         )}
 
-        {state.status === "error" && (
+        {showError && !showLoading && (
           <>
             <DialogHeader>
               <DialogTitle>Share Artifact</DialogTitle>
               <DialogDescription className="text-red-400">
-                {state.message}
+                {errorMessage}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <button
-                type="button"
+              <Button
+                className="bg-blue-600 text-white hover:bg-blue-500"
                 onClick={handleRetry}
-                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500"
               >
                 Try Again
-              </button>
+              </Button>
             </DialogFooter>
           </>
         )}

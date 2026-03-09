@@ -1,34 +1,41 @@
-import type { ShareResult } from '../hooks/use-url-hash'
-import { ShareDialog } from './share-dialog'
+import type { useShare } from "../hooks/use-share";
+import { ShareDialog } from "./share-dialog";
+import { Button } from "./ui/button";
 
 interface ToolbarProps {
-  readonly code: string
-  readonly getShareUrl: (code: string) => Promise<ShareResult>
-  readonly getCachedShareUrl: (code: string) => ShareResult | null
-  readonly editorCollapsed: boolean
-  readonly onRestoreEditor: () => void
-  readonly onCollapseEditor: () => void
+  readonly code: string;
+  readonly editorCollapsed: boolean;
+  readonly onCollapseEditor: () => void;
+  readonly onRestoreEditor: () => void;
+  readonly shareHook: ReturnType<typeof useShare>;
 }
 
-export function Toolbar({ code, getShareUrl, getCachedShareUrl, editorCollapsed, onRestoreEditor, onCollapseEditor }: ToolbarProps) {
+export function Toolbar({
+  code,
+  shareHook,
+  editorCollapsed,
+  onRestoreEditor,
+  onCollapseEditor,
+}: ToolbarProps) {
   return (
-    <header className="flex h-12 items-center justify-between border-b border-zinc-800 bg-zinc-950 px-4">
+    <header className="flex h-12 items-center justify-between border-zinc-800 border-b bg-zinc-950 px-4">
       <div className="flex items-center gap-2">
-        <button
-          type="button"
+        <Button
+          className="text-zinc-400 hover:text-zinc-200"
           onClick={editorCollapsed ? onRestoreEditor : onCollapseEditor}
-          className="rounded-md bg-zinc-800 px-2 py-1 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-zinc-200"
-          title={editorCollapsed ? 'Show editor' : 'Hide editor'}
+          size="xs"
+          title={editorCollapsed ? "Show editor" : "Hide editor"}
+          variant="ghost"
         >
-          {editorCollapsed ? '\u00BB' : '\u00AB'}
-        </button>
-        <h1 className="text-base font-semibold text-zinc-100 tracking-tight">
+          {editorCollapsed ? "\u00BB" : "\u00AB"}
+        </Button>
+        <h1 className="font-semibold text-base text-zinc-100 tracking-tight">
           Artifast
         </h1>
       </div>
       <div className="flex items-center gap-2">
-        <ShareDialog code={code} getShareUrl={getShareUrl} getCachedShareUrl={getCachedShareUrl} />
+        <ShareDialog code={code} {...shareHook} />
       </div>
     </header>
-  )
+  );
 }

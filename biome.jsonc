@@ -1,0 +1,32 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": ["ultracite/biome/core", "ultracite/biome/react"],
+  "files": {
+    "includes": ["!public/sandbox.html", "!.ref", "!index.html"]
+  },
+  "linter": {
+    "rules": {
+      "performance": {
+        "useTopLevelRegex": { "level": "warn" }
+      },
+      "style": {
+        "useForOf": { "level": "warn" },
+        "noDescendingSpecificity": { "level": "off" },
+        "useDefaultSwitchClause": { "level": "warn" },
+        "useNodejsImportProtocol": { "level": "warn" },
+        "useCollapsedIf": { "level": "warn" }
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": { "level": "warn" }
+      },
+      "suspicious": {
+        "noAssignInExpressions": { "level": "warn" }
+      },
+      "a11y": {
+        "useFocusableInteractive": { "level": "warn" },
+        "useSemanticElements": { "level": "warn" },
+        "useAriaPropsForRole": { "level": "warn" }
+      }
+    }
+  }
+}

@@ -1,30 +1,31 @@
-const FUNCTION_COMPONENT = /(?:function|const|let)\s+([A-Z][A-Za-z0-9]*)/g
-const PREFERRED_NAMES = ['App', 'Application', 'Main', 'Root'] as const
+const FUNCTION_COMPONENT = /(?:function|const|let)\s+([A-Z][A-Za-z0-9]*)/g;
+const PREFERRED_NAMES = ["App", "Application", "Main", "Root"] as const;
 
 export function findComponentName(code: string): string {
-  const matches: string[] = []
-  let match: RegExpExecArray | null
+  const matches: string[] = [];
+  let match: RegExpExecArray | null;
 
   while ((match = FUNCTION_COMPONENT.exec(code)) !== null) {
-    matches.push(match[1])
+    matches.push(match[1]);
   }
 
   if (matches.length === 0) {
-    return 'App'
+    return "App";
   }
 
   // Check preferred names in priority order, using Set for O(1) membership test
-  const matchSet = new Set(matches)
+  const matchSet = new Set(matches);
   for (const preferred of PREFERRED_NAMES) {
     if (matchSet.has(preferred)) {
-      return preferred
+      return preferred;
     }
   }
 
   // Check for __DefaultExport__ (from stripped `export default`)
-  if (code.includes('__DefaultExport__')) {
-    return '__DefaultExport__'
+  if (code.includes("__DefaultExport__")) {
+    return "__DefaultExport__";
   }
 
-  return matches[matches.length - 1]
+  // biome-ignore lint/style/useAtIndex: .at() returns undefined, array access is narrower here
+  return matches[matches.length - 1];
 }

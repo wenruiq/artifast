@@ -1,15 +1,18 @@
-import { useCallback, useEffect, useMemo } from 'react'
-import { ErrorPanel } from '../components/error-panel'
-import { PreviewFrame } from '../components/preview-frame'
-import { useSandbox } from '../hooks/use-sandbox'
-import { useUrlHash } from '../hooks/use-url-hash'
-import { isHtmlDocument } from '../lib/html-detector'
-import { cleanCode } from '../lib/code-cleaner'
-import { findComponentName } from '../lib/component-finder'
-import { rewriteImports } from '../lib/import-rewriter'
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ErrorPanel } from "../components/error-panel";
+import { PreviewFrame } from "../components/preview-frame";
+import { Button } from "../components/ui/button";
+import { useHashState } from "../hooks/use-hash-state";
+import { useResolveHash } from "../hooks/use-resolve-hash";
+import { useSandbox } from "../hooks/use-sandbox";
+import { cleanCode } from "../lib/code-cleaner";
+import { findComponentName } from "../lib/component-finder";
+import { isHtmlDocument } from "../lib/html-detector";
+import { rewriteImports } from "../lib/import-rewriter";
 
 export function ViewerPage() {
-  const { codeFromHash, isLoading } = useUrlHash()
+  const { isViewerMode } = useHashState();
+  const { code: codeFromHash, isLoading } = useResolveHash();
   const {
     iframeRef,
     isReady,
@@ -18,75 +21,100 @@ export function ViewerPage() {
     errorType,
     sendRender,
     sendHtml,
-  } = useSandbox()
+  } = useSandbox();
+  const [errorDismissed, setErrorDismissed] = useState(false);
+  const [prevError, setPrevError] = useState<string | null>(null);
+
+  // Auto-reopen when a new error arrives
+  if (error !== prevError) {
+    setPrevError(error);
+    if (error) {
+      setErrorDismissed(false);
+    }
+  }
 
   const isHtml = useMemo(
     () => (codeFromHash ? isHtmlDocument(codeFromHash) : false),
-    [codeFromHash],
-  )
+    [codeFromHash]
+  );
 
   const transformedResult = useMemo(() => {
-    if (!codeFromHash || isHtml) return null
+    if (!codeFromHash || isHtml) {
+      return null;
+    }
 
-    const cleaned = cleanCode(codeFromHash)
-    const { rewrittenCode } = rewriteImports(cleaned)
-    const componentName = findComponentName(rewrittenCode)
+    const cleaned = cleanCode(codeFromHash);
+    const { rewrittenCode } = rewriteImports(cleaned);
+    const componentName = findComponentName(rewrittenCode);
 
-    return { code: rewrittenCode, componentName }
-  }, [codeFromHash, isHtml])
+    return { code: rewrittenCode, componentName };
+  }, [codeFromHash, isHtml]);
 
   useEffect(() => {
-    if (!codeFromHash) return
+    if (!codeFromHash) {
+      return;
+    }
 
     if (isHtml) {
-      sendHtml(codeFromHash)
-      return
+      sendHtml(codeFromHash);
+      return;
     }
 
     if (transformedResult) {
-      sendRender(transformedResult.code, transformedResult.componentName)
+      sendRender(transformedResult.code, transformedResult.componentName);
     }
-  }, [codeFromHash, isHtml, transformedResult, sendRender, sendHtml])
+  }, [codeFromHash, isHtml, transformedResult, sendRender, sendHtml]);
 
   const handleRemix = useCallback(() => {
     if (codeFromHash) {
-      sessionStorage.setItem('artifast-remix', codeFromHash)
-      window.location.hash = ''
+      sessionStorage.setItem("artifast-remix", codeFromHash);
+      window.location.hash = "";
     }
-  }, [codeFromHash])
+  }, [codeFromHash]);
+
+  const handleDismissError = useCallback(() => {
+    setErrorDismissed(true);
+  }, []);
 
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-zinc-950 text-zinc-400">
         Loading artifact...
       </div>
-    )
+    );
   }
 
-  if (!codeFromHash) {
+  if (!codeFromHash && isViewerMode) {
     return (
       <div className="flex h-screen items-center justify-center bg-zinc-950 text-zinc-400">
         Invalid or expired artifact link.
       </div>
-    )
+    );
   }
 
   return (
     <div className="relative h-screen">
       <PreviewFrame
-        iframeRef={iframeRef}
-        isReady={isReady}
         hasContent={hasContent}
         hasError={error !== null}
+        iframeRef={iframeRef}
+        isReady={isReady}
       />
-      <ErrorPanel error={error} errorType={errorType} />
-      <button
-        type="button"
+      {!errorDismissed && (
+        <ErrorPanel
+          error={error}
+          errorType={errorType}
+          onDismiss={handleDismissError}
+        />
+      )}
+      <Button
+        className="fixed bottom-3 left-3 z-50 opacity-60 hover:opacity-100"
         onClick={handleRemix}
-        className="fixed bottom-3 left-3 z-50 rounded-md bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-200 opacity-60 transition-all hover:bg-zinc-700 hover:opacity-100"
+        size="xs"
+        variant="ghost"
       >
         Remix
-      </button>
+      </Button>
     </div>
-  )
+  );
 }

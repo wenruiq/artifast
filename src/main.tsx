@@ -1,10 +1,23 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { App } from './app'
-import './app.css'
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { App } from "./app";
+import "./app.css";
 
-createRoot(document.getElementById('root')!).render(
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      retry: 1,
+    },
+  },
+});
+
+// biome-ignore lint/style/noNonNullAssertion: root element always exists
+createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
-  </StrictMode>,
-)
+    <QueryClientProvider client={queryClient}>
+      <App />
+    </QueryClientProvider>
+  </StrictMode>
+);

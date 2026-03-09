@@ -1,31 +1,32 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { CodeEditor } from '../components/code-editor'
-import { ErrorPanel } from '../components/error-panel'
-import { ImportWarnings } from '../components/import-warnings'
-import { LibraryBadgeList } from '../components/library-badge-list'
-import { PreviewFrame } from '../components/preview-frame'
-import { Toolbar } from '../components/toolbar'
-import { useDebouncedCode } from '../hooks/use-debounced-code'
-import { usePanelResize } from '../hooks/use-panel-resize'
-import { useSandbox } from '../hooks/use-sandbox'
-import { useUrlHash } from '../hooks/use-url-hash'
-import { cleanCode } from '../lib/code-cleaner'
-import { findComponentName } from '../lib/component-finder'
-import { isHtmlDocument } from '../lib/html-detector'
-import { rewriteImports } from '../lib/import-rewriter'
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { CodeEditor } from "../components/code-editor";
+import { ErrorPanel } from "../components/error-panel";
+import { ImportWarnings } from "../components/import-warnings";
+import { LibraryBadgeList } from "../components/library-badge-list";
+import { PreviewFrame } from "../components/preview-frame";
+import { Toolbar } from "../components/toolbar";
+import { useDebouncedCode } from "../hooks/use-debounced-code";
+import { usePanelResize } from "../hooks/use-panel-resize";
+import { useSandbox } from "../hooks/use-sandbox";
+import { useShare } from "../hooks/use-share";
+import { cleanCode } from "../lib/code-cleaner";
+import { findComponentName } from "../lib/component-finder";
+import { isHtmlDocument } from "../lib/html-detector";
+import { rewriteImports } from "../lib/import-rewriter";
+import { cn } from "../lib/utils";
 
 export function CreatorPage() {
   const [rawCode, setRawCode] = useState(() => {
-    const remix = sessionStorage.getItem('artifast-remix')
+    const remix = sessionStorage.getItem("artifast-remix");
     if (remix) {
-      sessionStorage.removeItem('artifast-remix')
-      return remix
+      sessionStorage.removeItem("artifast-remix");
+      return remix;
     }
-    return ''
-  })
-  const [errorDismissed, setErrorDismissed] = useState(false)
-  const [prevError, setPrevError] = useState<string | null>(null)
-  const debouncedCode = useDebouncedCode(rawCode)
+    return "";
+  });
+  const [errorDismissed, setErrorDismissed] = useState(false);
+  const [prevError, setPrevError] = useState<string | null>(null);
+  const debouncedCode = useDebouncedCode(rawCode);
   const {
     iframeRef,
     isReady,
@@ -35,8 +36,8 @@ export function CreatorPage() {
     sendRender,
     sendHtml,
     sendClear,
-  } = useSandbox()
-  const { getShareUrl, getCachedShareUrl } = useUrlHash()
+  } = useSandbox();
+  const shareHook = useShare();
   const {
     widthPercent,
     isCollapsed,
@@ -46,105 +47,112 @@ export function CreatorPage() {
     handleDoubleClick,
     restore,
     collapse,
-  } = usePanelResize()
+  } = usePanelResize();
 
   // Auto-reopen when a new error arrives (computed during render, not in effect)
   if (error !== prevError) {
-    setPrevError(error)
+    setPrevError(error);
     if (error) {
-      setErrorDismissed(false)
+      setErrorDismissed(false);
     }
   }
 
-  const isHtml = useMemo(
-    () => isHtmlDocument(debouncedCode),
-    [debouncedCode],
-  )
+  const isHtml = useMemo(() => isHtmlDocument(debouncedCode), [debouncedCode]);
 
   const transformedResult = useMemo(() => {
-    if (!debouncedCode.trim() || isHtml) return null
+    if (!debouncedCode.trim() || isHtml) {
+      return null;
+    }
 
-    const cleaned = cleanCode(debouncedCode)
-    const { rewrittenCode, warnings: importWarnings } =
-      rewriteImports(cleaned)
-    const componentName = findComponentName(rewrittenCode)
+    const cleaned = cleanCode(debouncedCode);
+    const { rewrittenCode, warnings: importWarnings } = rewriteImports(cleaned);
+    const componentName = findComponentName(rewrittenCode);
 
     return {
       code: rewrittenCode,
       componentName,
       warnings: importWarnings,
-    }
-  }, [debouncedCode, isHtml])
+    };
+  }, [debouncedCode, isHtml]);
 
   // Derive warnings from transformedResult instead of storing in state
   const warnings = useMemo(
     () => transformedResult?.warnings ?? [],
-    [transformedResult],
-  )
+    [transformedResult]
+  );
 
   // Side effect: communicate with sandbox iframe
   useEffect(() => {
-    const trimmed = debouncedCode.trim()
+    const trimmed = debouncedCode.trim();
 
     if (!trimmed) {
-      sendClear()
-      return
+      sendClear();
+      return;
     }
 
     if (isHtml) {
-      sendHtml(trimmed)
-      return
+      sendHtml(trimmed);
+      return;
     }
 
     if (transformedResult) {
-      sendRender(transformedResult.code, transformedResult.componentName)
+      sendRender(transformedResult.code, transformedResult.componentName);
     }
-  }, [debouncedCode, isHtml, transformedResult, sendRender, sendHtml, sendClear])
-
-  const handleCodeChange = useCallback((code: string) => {
-    setRawCode(code)
-  }, [])
+  }, [
+    debouncedCode,
+    isHtml,
+    transformedResult,
+    sendRender,
+    sendHtml,
+    sendClear,
+  ]);
 
   const handleDismissError = useCallback(() => {
-    setErrorDismissed(true)
-  }, [])
+    setErrorDismissed(true);
+  }, []);
 
   return (
     <div className="flex h-screen flex-col bg-zinc-950">
       <Toolbar
         code={rawCode}
-        getShareUrl={getShareUrl}
-        getCachedShareUrl={getCachedShareUrl}
         editorCollapsed={isCollapsed}
-        onRestoreEditor={restore}
         onCollapseEditor={collapse}
+        onRestoreEditor={restore}
+        shareHook={shareHook}
       />
       {isHtml ? null : <ImportWarnings warnings={warnings} />}
       <div
+        className={cn(
+          "flex min-h-0 flex-1",
+          isDragging && "cursor-col-resize select-none"
+        )}
         ref={containerRef}
-        className={`flex min-h-0 flex-1${isDragging ? ' cursor-col-resize select-none' : ''}`}
       >
         <div
-          className={isCollapsed ? 'w-0 overflow-hidden' : 'border-r border-zinc-800'}
+          className={
+            isCollapsed ? "w-0 overflow-hidden" : "border-zinc-800 border-r"
+          }
           style={isCollapsed ? undefined : { width: `${widthPercent}%` }}
         >
-          <CodeEditor code={rawCode} onChange={handleCodeChange} />
+          <CodeEditor code={rawCode} onChange={setRawCode} />
         </div>
         <div
-          role="separator"
-          onMouseDown={handleMouseDown}
+          className={cn(
+            "shrink-0 cursor-col-resize bg-zinc-900 transition-colors hover:bg-blue-500/40 active:bg-blue-500/60",
+            isCollapsed ? "hidden" : "w-1.5",
+            isDragging && "bg-blue-500/60"
+          )}
           onDoubleClick={handleDoubleClick}
-          className={`shrink-0 cursor-col-resize bg-zinc-900 transition-colors hover:bg-blue-500/40 active:bg-blue-500/60${
-            isCollapsed ? ' hidden' : ' w-1.5'
-          }${isDragging ? ' bg-blue-500/60' : ''}`}
+          onMouseDown={handleMouseDown}
+          role="separator"
         />
         <div className="relative min-w-0 flex-1">
           {isDragging && <div className="absolute inset-0 z-10" />}
           <PreviewFrame
-            iframeRef={iframeRef}
-            isReady={isReady}
             hasContent={hasContent}
             hasError={error !== null}
+            iframeRef={iframeRef}
+            isReady={isReady}
           />
         </div>
       </div>
@@ -157,5 +165,5 @@ export function CreatorPage() {
       )}
       <LibraryBadgeList />
     </div>
-  )
+  );
 }
