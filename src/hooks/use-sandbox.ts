@@ -60,6 +60,8 @@ export function useSandbox(): SandboxState {
           setError(data.error);
           setErrorType("transpile-error");
           break;
+        default:
+          break;
       }
     }
 

@@ -1,12 +1,14 @@
+const TRAILING_EQUALS = /=+$/;
+
 function uint8ToBase64url(bytes: Uint8Array): string {
   let binary = "";
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
   }
   return btoa(binary)
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
-    .replace(/=+$/, "");
+    .replace(TRAILING_EQUALS, "");
 }
 
 function base64urlToUint8(str: string): Uint8Array {

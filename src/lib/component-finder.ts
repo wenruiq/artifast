@@ -3,9 +3,12 @@ const PREFERRED_NAMES = ["App", "Application", "Main", "Root"] as const;
 
 export function findComponentName(code: string): string {
   const matches: string[] = [];
-  let match: RegExpExecArray | null;
 
-  while ((match = FUNCTION_COMPONENT.exec(code)) !== null) {
+  for (;;) {
+    const match = FUNCTION_COMPONENT.exec(code);
+    if (match === null) {
+      break;
+    }
     matches.push(match[1]);
   }
 

@@ -136,15 +136,16 @@ export function CreatorPage() {
         >
           <CodeEditor code={rawCode} onChange={setRawCode} />
         </div>
-        <div
+        <hr
+          aria-valuenow={Math.round(widthPercent)}
           className={cn(
-            "shrink-0 cursor-col-resize bg-zinc-900 transition-colors hover:bg-blue-500/40 active:bg-blue-500/60",
+            "shrink-0 cursor-col-resize border-none bg-zinc-900 transition-colors hover:bg-blue-500/40 active:bg-blue-500/60",
             isCollapsed ? "hidden" : "w-1.5",
             isDragging && "bg-blue-500/60"
           )}
           onDoubleClick={handleDoubleClick}
           onMouseDown={handleMouseDown}
-          role="separator"
+          tabIndex={0}
         />
         <div className="relative min-w-0 flex-1">
           {isDragging && <div className="absolute inset-0 z-10" />}

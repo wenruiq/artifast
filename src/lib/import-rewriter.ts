@@ -4,6 +4,16 @@ import {
 } from "../constants/library-registry";
 import type { ImportWarning } from "../types";
 
+const SIDE_EFFECT_IMPORT = /^import\s+['"]([^'"]+)['"]\s*;?\s*$/;
+const TYPE_ONLY_IMPORT = /^import\s+type\s/;
+const NS_IMPORT =
+  /^import\s+\*\s+as\s+(\w+)\s+from\s+['"]([^'"]+)['"]\s*;?\s*$/;
+const MIXED_IMPORT =
+  /^import\s+(\w+)\s*,\s*\{([^}]*)\}\s+from\s+['"]([^'"]+)['"]\s*;?\s*$/;
+const NAMED_IMPORT = /^import\s+\{([^}]*)\}\s+from\s+['"]([^'"]+)['"]\s*;?\s*$/;
+const DEFAULT_IMPORT = /^import\s+(\w+)\s+from\s+['"]([^'"]+)['"]\s*;?\s*$/;
+const AS_SPLIT = /\s+as\s+/;
+
 interface RewriteResult {
   readonly rewrittenCode: string;
   readonly warnings: readonly ImportWarning[];
@@ -16,7 +26,7 @@ function collapseMultilineImports(code: string): string {
 }
 
 function isSideEffectImport(line: string): boolean {
-  const match = line.match(/^import\s+['"]([^'"]+)['"]\s*;?\s*$/);
+  const match = line.match(SIDE_EFFECT_IMPORT);
   if (!match) {
     return false;
   }
@@ -25,7 +35,7 @@ function isSideEffectImport(line: string): boolean {
 }
 
 function isTypeOnlyImport(line: string): boolean {
-  return /^import\s+type\s/.test(line.trimStart());
+  return TYPE_ONLY_IMPORT.test(line.trimStart());
 }
 
 function parseImportLine(line: string): {
@@ -37,9 +47,7 @@ function parseImportLine(line: string): {
   const trimmed = line.trimStart();
 
   // import * as X from 'pkg'
-  const nsMatch = trimmed.match(
-    /^import\s+\*\s+as\s+(\w+)\s+from\s+['"]([^'"]+)['"]\s*;?\s*$/
-  );
+  const nsMatch = trimmed.match(NS_IMPORT);
   if (nsMatch) {
     return {
       namedImports: [],
@@ -50,9 +58,7 @@ function parseImportLine(line: string): {
   }
 
   // import Default, { Named1, Named2 } from 'pkg'
-  const mixedMatch = trimmed.match(
-    /^import\s+(\w+)\s*,\s*\{([^}]*)\}\s+from\s+['"]([^'"]+)['"]\s*;?\s*$/
-  );
+  const mixedMatch = trimmed.match(MIXED_IMPORT);
   if (mixedMatch) {
     const named = mixedMatch[2]
       .split(",")
@@ -67,9 +73,7 @@ function parseImportLine(line: string): {
   }
 
   // import { Named1, Named2 } from 'pkg'
-  const namedMatch = trimmed.match(
-    /^import\s+\{([^}]*)\}\s+from\s+['"]([^'"]+)['"]\s*;?\s*$/
-  );
+  const namedMatch = trimmed.match(NAMED_IMPORT);
   if (namedMatch) {
     const named = namedMatch[1]
       .split(",")
@@ -84,9 +88,7 @@ function parseImportLine(line: string): {
   }
 
   // import Default from 'pkg'
-  const defaultMatch = trimmed.match(
-    /^import\s+(\w+)\s+from\s+['"]([^'"]+)['"]\s*;?\s*$/
-  );
+  const defaultMatch = trimmed.match(DEFAULT_IMPORT);
   if (defaultMatch) {
     return {
       namedImports: [],
@@ -116,7 +118,7 @@ function rewriteSingleImport(
   }
 
   // Side-effect import of non-CSS (e.g., import 'some-module')
-  const sideEffectMatch = trimmed.match(/^import\s+['"]([^'"]+)['"]\s*;?\s*$/);
+  const sideEffectMatch = trimmed.match(SIDE_EFFECT_IMPORT);
   if (sideEffectMatch) {
     return "";
   }
@@ -146,17 +148,14 @@ function rewriteSingleImport(
     return lines.join("\n");
   }
 
-  if (parsed.defaultImport) {
-    // Skip if binding name matches the global (already in scope)
-    if (parsed.defaultImport !== globalName) {
-      lines.push(`const ${parsed.defaultImport} = ${globalName};`);
-    }
+  if (parsed.defaultImport && parsed.defaultImport !== globalName) {
+    lines.push(`const ${parsed.defaultImport} = ${globalName};`);
   }
 
   if (parsed.namedImports.length > 0) {
     const destructured = parsed.namedImports
       .map((imp) => {
-        const parts = imp.split(/\s+as\s+/);
+        const parts = imp.split(AS_SPLIT);
         return parts.length === 2 ? `${parts[0]}: ${parts[1]}` : imp;
       })
       .join(", ");
