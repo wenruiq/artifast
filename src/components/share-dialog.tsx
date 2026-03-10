@@ -48,7 +48,7 @@ function CopyButton({ url }: { readonly url: string }) {
     navigator.clipboard.writeText(url).then(
       () => {
         setCopied(true);
-        timerRef.current = setTimeout(() => setCopied(false), 2000);
+        timerRef.current = setTimeout(() => setCopied(false), 1200);
       },
       () => {
         // clipboard write rejected — ignore
@@ -62,13 +62,16 @@ function CopyButton({ url }: { readonly url: string }) {
   }, [url]);
 
   const handleCopy = useCallback(() => {
+    setCopied(false);
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
     navigator.clipboard.writeText(url).then(
       () => {
-        setCopied(true);
-        if (timerRef.current) {
-          clearTimeout(timerRef.current);
-        }
-        timerRef.current = setTimeout(() => setCopied(false), 2000);
+        requestAnimationFrame(() => {
+          setCopied(true);
+          timerRef.current = setTimeout(() => setCopied(false), 1200);
+        });
       },
       () => {
         // clipboard write rejected — ignore
@@ -210,11 +213,13 @@ export function ShareDialog({
               )}
             </DialogHeader>
             <div className="flex items-center gap-2 overflow-hidden">
-              <div className="min-w-0 flex-1 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2">
-                <code className="block truncate text-xs text-zinc-300">
-                  {url}
-                </code>
-              </div>
+              <input
+                className="min-w-0 flex-1 cursor-text rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs text-zinc-300 outline-none focus:border-zinc-600 focus:ring-1 focus:ring-zinc-600"
+                onFocus={(e) => e.currentTarget.select()}
+                readOnly
+                type="text"
+                value={url}
+              />
               <CopyButton url={url} />
             </div>
             <DialogFooter>
