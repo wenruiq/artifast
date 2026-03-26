@@ -5,6 +5,7 @@ import { ImportWarnings } from "../components/import-warnings";
 import { LibraryBadgeList } from "../components/library-badge-list";
 import { PreviewFrame } from "../components/preview-frame";
 import { Toolbar } from "../components/toolbar";
+import { EXAMPLE_CODE } from "../constants/example-code";
 import { useDebouncedCode } from "../hooks/use-debounced-code";
 import { usePanelResize } from "../hooks/use-panel-resize";
 import { useSandbox } from "../hooks/use-sandbox";
@@ -120,6 +121,10 @@ export function CreatorPage() {
     setErrorDismissed(true);
   }, []);
 
+  const handleLoadExample = useCallback(() => {
+    setRawCode(EXAMPLE_CODE);
+  }, []);
+
   return (
     <div className="flex h-screen flex-col bg-zinc-950">
       <Toolbar
@@ -164,6 +169,7 @@ export function CreatorPage() {
             hasError={error !== null}
             iframeRef={iframeRef}
             isReady={isReady}
+            onLoadExample={handleLoadExample}
           />
         </div>
       </div>

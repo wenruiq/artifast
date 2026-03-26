@@ -5,6 +5,7 @@ interface PreviewFrameProps {
   readonly hasError: boolean;
   readonly iframeRef: RefObject<HTMLIFrameElement | null>;
   readonly isReady: boolean;
+  readonly onLoadExample?: () => void;
 }
 
 export function PreviewFrame({
@@ -12,6 +13,7 @@ export function PreviewFrame({
   isReady,
   hasContent,
   hasError,
+  onLoadExample,
 }: PreviewFrameProps) {
   const showLoading = !(isReady || hasContent);
   const showPlaceholder = !(showLoading || hasContent);
@@ -27,12 +29,21 @@ export function PreviewFrame({
         </div>
       )}
       {showPlaceholder && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3">
           <p className="text-sm text-zinc-600">
             {hasError
               ? "Fix the error to see the preview"
               : "Paste code on the left to preview"}
           </p>
+          {!hasError && onLoadExample && (
+            <button
+              className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-400 transition-colors hover:border-zinc-500 hover:text-zinc-200"
+              onClick={onLoadExample}
+              type="button"
+            >
+              or try an example
+            </button>
+          )}
         </div>
       )}
       <iframe
