@@ -25,6 +25,7 @@ export function CreatorPage() {
     return "";
   });
   const [errorDismissed, setErrorDismissed] = useState(false);
+  const [vimMode, setVimMode] = useState(false);
   const [prevError, setPrevError] = useState<string | null>(null);
   const debouncedCode = useDebouncedCode(rawCode);
   const {
@@ -142,17 +143,18 @@ export function CreatorPage() {
           }
           style={isCollapsed ? undefined : { width: `${widthPercent}%` }}
         >
-          <CodeEditor code={rawCode} onChange={setRawCode} />
+          <CodeEditor code={rawCode} onChange={setRawCode} vimMode={vimMode} />
         </div>
         <hr
           aria-valuenow={Math.round(widthPercent)}
           className={cn(
-            "shrink-0 cursor-col-resize border-none bg-zinc-900 transition-colors hover:bg-blue-500/40 active:bg-blue-500/60",
-            isCollapsed ? "hidden" : "w-1.5",
+            "z-20 shrink-0 cursor-col-resize border-none bg-zinc-900 px-1 transition-colors hover:bg-blue-500/40 active:bg-blue-500/60",
+            isCollapsed ? "hidden" : "box-content w-1.5",
             isDragging && "bg-blue-500/60"
           )}
           onDoubleClick={handleDoubleClick}
           onMouseDown={handleMouseDown}
+          style={{ marginLeft: "-4px", marginRight: "-4px" }}
           tabIndex={0}
         />
         <div className="relative min-w-0 flex-1">
@@ -172,7 +174,10 @@ export function CreatorPage() {
           onDismiss={handleDismissError}
         />
       )}
-      <LibraryBadgeList />
+      <LibraryBadgeList
+        onToggleVim={() => setVimMode((v) => !v)}
+        vimMode={vimMode}
+      />
     </div>
   );
 }

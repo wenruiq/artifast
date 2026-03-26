@@ -43,8 +43,15 @@ Use inline or mock data — no external API calls.`;
 
 const VISIBLE_COUNT = 5;
 
-// rerender-memo: static content that never changes, skip all parent re-renders
-export const LibraryBadgeList = memo(function LibraryBadgeList() {
+interface LibraryBadgeListProps {
+  readonly onToggleVim: () => void;
+  readonly vimMode: boolean;
+}
+
+export const LibraryBadgeList = memo(function LibraryBadgeList({
+  vimMode,
+  onToggleVim,
+}: LibraryBadgeListProps) {
   const [expanded, setExpanded] = useState(false);
 
   const handleCopyPrompt = useCallback(() => {
@@ -95,12 +102,26 @@ export const LibraryBadgeList = memo(function LibraryBadgeList() {
       >
         <CopyIcon className="h-3.5 w-3.5" />
       </button>
-      <span
-        className="ml-auto shrink-0 font-mono text-[10px] text-zinc-600"
-        title={`build ${__COMMIT_SHA__}`}
-      >
-        v{__APP_VERSION__}
-      </span>
+      <div className="ml-auto flex shrink-0 items-center gap-2">
+        <button
+          className={`font-mono text-[10px] transition-colors ${
+            vimMode
+              ? "text-green-500 hover:text-green-400"
+              : "text-zinc-600 hover:text-zinc-400"
+          }`}
+          onClick={onToggleVim}
+          title={vimMode ? "Disable Vim mode" : "Enable Vim mode"}
+          type="button"
+        >
+          {vimMode ? "VIM" : "vim"}
+        </button>
+        <span
+          className="font-mono text-[10px] text-zinc-600"
+          title={`build ${__COMMIT_SHA__}`}
+        >
+          v{__APP_VERSION__}
+        </span>
+      </div>
     </div>
   );
 });
