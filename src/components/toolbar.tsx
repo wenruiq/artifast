@@ -29,7 +29,7 @@ export function Toolbar({
         >
           {editorCollapsed ? "\u00BB" : "\u00AB"}
         </Button>
-        <h1 className="font-semibold text-base text-zinc-100 tracking-tight">
+        <h1 className="cursor-default font-semibold text-base text-zinc-100 tracking-tight">
           Artifast
         </h1>
       </div>
