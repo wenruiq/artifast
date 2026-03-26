@@ -4,6 +4,9 @@ const EXPORT_DEFAULT_FUNCTION = /^export\s+default\s+function\s/;
 const EXPORT_DEFAULT_CLASS = /^export\s+default\s+class\s/;
 const EXPORT_DEFAULT_CONST = /^export\s+default\s+/;
 const EXPORT_NAMED = /^export\s+(const|let|function|class)\s/;
+const EXPORT_NAMED_AS_DEFAULT =
+  /^export\s*\{\s*([A-Za-z_$][A-Za-z0-9_$]*)\s+as\s+default\s*\}/;
+const MODULE_EXPORTS = /^module\.exports\s*=\s*/;
 const STRIP_EXPORT = /^(\s*)export\s+/;
 const STRIP_EXPORT_DEFAULT = /^(\s*)export\s+default\s+/;
 const TYPE_IMPORT = /^import\s+type\s/;
@@ -40,6 +43,15 @@ function rewriteExport(line: string, trimStart: string): string {
   }
   if (EXPORT_NAMED.test(trimStart)) {
     return line.replace(STRIP_EXPORT, "$1");
+  }
+  // export { Foo as default } → const __DefaultExport__ = Foo;
+  const namedAsDefault = EXPORT_NAMED_AS_DEFAULT.exec(trimStart);
+  if (namedAsDefault) {
+    return `const __DefaultExport__ = ${namedAsDefault[1]};`;
+  }
+  // module.exports = Foo → const __DefaultExport__ = Foo;
+  if (MODULE_EXPORTS.test(trimStart)) {
+    return line.replace(MODULE_EXPORTS, "const __DefaultExport__ = ");
   }
   if (EXPORT_DEFAULT_CONST.test(trimStart)) {
     return line.replace(STRIP_EXPORT_DEFAULT, "$1const __DefaultExport__ = ");

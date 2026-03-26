@@ -45,9 +45,15 @@ export function ViewerPage() {
 
     const cleaned = cleanCode(codeFromHash);
     const { rewrittenCode } = rewriteImports(cleaned);
-    const componentName = findComponentName(rewrittenCode);
+    let componentName = findComponentName(rewrittenCode);
+    let finalCode = rewrittenCode;
 
-    return { code: rewrittenCode, componentName };
+    if (!componentName) {
+      finalCode = `function App() {\n  return (\n${rewrittenCode}\n  );\n}`;
+      componentName = "App";
+    }
+
+    return { code: finalCode, componentName };
   }, [codeFromHash, isHtml]);
 
   useEffect(() => {

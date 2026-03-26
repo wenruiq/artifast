@@ -66,10 +66,18 @@ export function CreatorPage() {
 
     const cleaned = cleanCode(debouncedCode);
     const { rewrittenCode, warnings: importWarnings } = rewriteImports(cleaned);
-    const componentName = findComponentName(rewrittenCode);
+    let componentName = findComponentName(rewrittenCode);
+    let finalCode = rewrittenCode;
+
+    // If no component was detected, wrap the code in one.
+    // Handles bare JSX like `<div>Hello</div>` or expressions.
+    if (!componentName) {
+      finalCode = `function App() {\n  return (\n${rewrittenCode}\n  );\n}`;
+      componentName = "App";
+    }
 
     return {
-      code: rewrittenCode,
+      code: finalCode,
       componentName,
       warnings: importWarnings,
     };

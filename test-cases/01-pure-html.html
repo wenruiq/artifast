@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weather Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    .dashboard {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(90deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 1.25rem;
+      transition: transform 0.2s;
+    }
+    .card:hover { transform: translateY(-2px); }
+    .card-label { font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+    .card-value { font-size: 2rem; font-weight: 700; margin-top: 0.25rem; }
+    .card-sub { font-size: 0.85rem; color: #64748b; margin-top: 0.25rem; }
+    .forecast {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .forecast h2 { font-size: 1.1rem; margin-bottom: 1rem; color: #cbd5e1; }
+    .forecast-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .forecast-row:last-child { border-bottom: none; }
+    .forecast-day { width: 80px; font-weight: 500; }
+    .forecast-icon { font-size: 1.5rem; }
+    .forecast-temps { text-align: right; }
+    .forecast-high { font-weight: 600; }
+    .forecast-low { color: #64748b; margin-left: 0.5rem; }
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      height: 120px;
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+    }
+    .bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; }
+    .bar {
+      width: 100%;
+      max-width: 40px;
+      border-radius: 4px 4px 0 0;
+      background: linear-gradient(180deg, #38bdf8, #6366f1);
+      transition: height 0.5s ease;
+    }
+    .bar-label { font-size: 0.7rem; color: #64748b; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <h1>San Francisco Weather</h1>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-label">Temperature</div>
+        <div class="card-value">68&deg;F</div>
+        <div class="card-sub">Feels like 65&deg;F</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Humidity</div>
+        <div class="card-value">72%</div>
+        <div class="card-sub">Dew point 58&deg;F</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Wind</div>
+        <div class="card-value">12 mph</div>
+        <div class="card-sub">WSW gusts 18 mph</div>
+      </div>
+      <div class="card">
+        <div class="card-label">UV Index</div>
+        <div class="card-value">5</div>
+        <div class="card-sub">Moderate</div>
+      </div>
+    </div>
+
+    <div class="forecast">
+      <h2>7-Day Forecast</h2>
+      <div class="forecast-row"><span class="forecast-day">Mon</span><span class="forecast-icon">&#9728;&#65039;</span><span class="forecast-temps"><span class="forecast-high">72&deg;</span><span class="forecast-low">58&deg;</span></span></div>
+      <div class="forecast-row"><span class="forecast-day">Tue</span><span class="forecast-icon">&#9925;</span><span class="forecast-temps"><span class="forecast-high">68&deg;</span><span class="forecast-low">55&deg;</span></span></div>
+      <div class="forecast-row"><span class="forecast-day">Wed</span><span class="forecast-icon">&#127782;&#65039;</span><span class="forecast-temps"><span class="forecast-high">65&deg;</span><span class="forecast-low">54&deg;</span></span></div>
+      <div class="forecast-row"><span class="forecast-day">Thu</span><span class="forecast-icon">&#127783;&#65039;</span><span class="forecast-temps"><span class="forecast-high">61&deg;</span><span class="forecast-low">52&deg;</span></span></div>
+      <div class="forecast-row"><span class="forecast-day">Fri</span><span class="forecast-icon">&#127782;&#65039;</span><span class="forecast-temps"><span class="forecast-high">63&deg;</span><span class="forecast-low">53&deg;</span></span></div>
+      <div class="forecast-row"><span class="forecast-day">Sat</span><span class="forecast-icon">&#9728;&#65039;</span><span class="forecast-temps"><span class="forecast-high">70&deg;</span><span class="forecast-low">56&deg;</span></span></div>
+      <div class="forecast-row"><span class="forecast-day">Sun</span><span class="forecast-icon">&#9728;&#65039;</span><span class="forecast-temps"><span class="forecast-high">74&deg;</span><span class="forecast-low">59&deg;</span></span></div>
+    </div>
+
+    <div class="bar-chart" id="hourlyChart"></div>
+  </div>
+
+  <script>
+    const hourlyTemps = [
+      { hour: '6am', temp: 58 },
+      { hour: '9am', temp: 62 },
+      { hour: '12pm', temp: 67 },
+      { hour: '3pm', temp: 70 },
+      { hour: '6pm', temp: 68 },
+      { hour: '9pm', temp: 63 },
+    ];
+    const maxTemp = Math.max(...hourlyTemps.map(h => h.temp));
+    const chart = document.getElementById('hourlyChart');
+    hourlyTemps.forEach(h => {
+      const col = document.createElement('div');
+      col.className = 'bar-col';
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      bar.style.height = ((h.temp / maxTemp) * 90) + '%';
+      const label = document.createElement('div');
+      label.className = 'bar-label';
+      label.textContent = h.hour;
+      col.appendChild(bar);
+      col.appendChild(label);
+      chart.appendChild(col);
+    });
+  </script>
+</body>
+</html>
