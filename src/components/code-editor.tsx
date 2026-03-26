@@ -22,8 +22,16 @@ import {
   keymap,
   lineNumbers,
 } from "@codemirror/view";
-import { vim } from "@replit/codemirror-vim";
 import { useCallback, useEffect, useRef } from "react";
+
+// Lazy-loaded on first vim toggle
+let vimPromise: Promise<typeof import("@replit/codemirror-vim")> | null = null;
+function loadVim() {
+  if (!vimPromise) {
+    vimPromise = import("@replit/codemirror-vim");
+  }
+  return vimPromise;
+}
 
 const HTML_DOCTYPE = /^<!doctype\s+html/i;
 const HTML_TAG = /^<html[\s>]/i;
@@ -303,8 +311,20 @@ export function CodeEditor({
     if (!view) {
       return;
     }
-    view.dispatch({
-      effects: vimCompartment.current.reconfigure(vimMode ? vim() : []),
+    if (!vimMode) {
+      view.dispatch({
+        effects: vimCompartment.current.reconfigure([]),
+      });
+      return;
+    }
+    loadVim().then(({ vim }) => {
+      const v = viewRef.current;
+      if (!v) {
+        return;
+      }
+      v.dispatch({
+        effects: vimCompartment.current.reconfigure(vim()),
+      });
     });
   }, [vimMode]);
 

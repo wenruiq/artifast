@@ -5,7 +5,6 @@ import { ImportWarnings } from "../components/import-warnings";
 import { LibraryBadgeList } from "../components/library-badge-list";
 import { PreviewFrame } from "../components/preview-frame";
 import { Toolbar } from "../components/toolbar";
-import { EXAMPLE_CODE } from "../constants/example-code";
 import { useDebouncedCode } from "../hooks/use-debounced-code";
 import { usePanelResize } from "../hooks/use-panel-resize";
 import { useSandbox } from "../hooks/use-sandbox";
@@ -122,7 +121,9 @@ export function CreatorPage() {
   }, []);
 
   const handleLoadExample = useCallback(() => {
-    setRawCode(EXAMPLE_CODE);
+    import("../constants/example-code").then(({ EXAMPLE_CODE }) => {
+      setRawCode(EXAMPLE_CODE);
+    });
   }, []);
 
   return (
