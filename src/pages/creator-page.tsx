@@ -10,7 +10,7 @@ import { usePanelResize } from "../hooks/use-panel-resize";
 import { useSandbox } from "../hooks/use-sandbox";
 import { useShare } from "../hooks/use-share";
 import { cleanCode } from "../lib/code-cleaner";
-import { findComponentName } from "../lib/component-finder";
+import { findComponentName, isLowercaseName } from "../lib/component-finder";
 import { isHtmlDocument } from "../lib/html-detector";
 import { rewriteImports } from "../lib/import-rewriter";
 import { cn } from "../lib/utils";
@@ -70,11 +70,14 @@ export function CreatorPage() {
     let componentName = findComponentName(rewrittenCode);
     let finalCode = rewrittenCode;
 
-    // If no component was detected, wrap the code in one.
-    // Handles bare JSX like `<div>Hello</div>` or expressions.
     if (!componentName) {
+      // No declarations at all — wrap bare JSX in a component
       finalCode = `function App() {\n  return (\n${rewrittenCode}\n  );\n}`;
       componentName = "App";
+    } else if (isLowercaseName(componentName)) {
+      // Lowercase name — React requires uppercase, so alias it
+      finalCode = `${rewrittenCode}\nconst _AliasedComponent = ${componentName};`;
+      componentName = "_AliasedComponent";
     }
 
     return {

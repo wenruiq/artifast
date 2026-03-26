@@ -6,7 +6,7 @@ import { useHashState } from "../hooks/use-hash-state";
 import { useResolveHash } from "../hooks/use-resolve-hash";
 import { useSandbox } from "../hooks/use-sandbox";
 import { cleanCode } from "../lib/code-cleaner";
-import { findComponentName } from "../lib/component-finder";
+import { findComponentName, isLowercaseName } from "../lib/component-finder";
 import { isHtmlDocument } from "../lib/html-detector";
 import { rewriteImports } from "../lib/import-rewriter";
 
@@ -51,6 +51,9 @@ export function ViewerPage() {
     if (!componentName) {
       finalCode = `function App() {\n  return (\n${rewrittenCode}\n  );\n}`;
       componentName = "App";
+    } else if (isLowercaseName(componentName)) {
+      finalCode = `${rewrittenCode}\nconst _AliasedComponent = ${componentName};`;
+      componentName = "_AliasedComponent";
     }
 
     return { code: finalCode, componentName };
