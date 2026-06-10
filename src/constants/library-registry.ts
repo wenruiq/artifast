@@ -155,6 +155,24 @@ export const LIBRARY_REGISTRY: ReadonlyMap<string, LibraryMapping> = new Map([
       version: "4.x",
     },
   ],
+  [
+    "framer-motion",
+    {
+      packageName: "framer-motion",
+      globalName: "FramerMotion",
+      cdnUrl: "https://esm.sh/framer-motion@11.18.2?external=react,react-dom",
+      version: "11.x",
+    },
+  ],
+  [
+    "motion/react",
+    {
+      packageName: "motion/react",
+      globalName: "FramerMotion",
+      cdnUrl: "https://esm.sh/framer-motion@11.18.2?external=react,react-dom",
+      version: "11.x",
+    },
+  ],
 ]);
 
 const SHADCN_PATTERN = /^@\/components\/ui\//;
@@ -195,4 +213,5 @@ export const SUPPORTED_LIBRARY_NAMES = [
   "mammoth",
   "mathjs",
   "TensorFlow.js",
+  "Framer Motion",
 ] as const;

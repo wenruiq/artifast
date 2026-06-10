@@ -107,13 +107,15 @@
       import { createRoot } from 'react-dom/client';
 
       // Parallel-load React-dependent libraries
-      const [LucideReact, Recharts, ShadcnUI] = await Promise.all([
+      const [LucideReact, Recharts, ShadcnUI, FramerMotion] = await Promise.all([
         import('https://esm.sh/lucide-react@0.460.0?external=react')
           .catch(err => { console.warn('lucide-react failed to load:', err); return {}; }),
         import('https://esm.sh/recharts@2.15.0?external=react,react-dom')
           .catch(err => { console.warn('Recharts failed to load:', err); return {}; }),
         import('https://esm.sh/shadcdn@0.0.8?external=react,react-dom')
           .catch(err => { console.warn('shadcn/UI failed to load:', err); return {}; }),
+        import('https://esm.sh/framer-motion@11.18.2?external=react,react-dom')
+          .catch(err => { console.warn('framer-motion failed to load:', err); return {}; }),
       ]);
 
       // Expose as globals for new Function() scope
@@ -122,6 +124,7 @@
       window.LucideReact = LucideReact;
       window.Recharts = Recharts;
       window.ShadcnUI = ShadcnUI;
+      window.FramerMotion = FramerMotion;
       window.Chart = window.Chart || {};
       window.Plotly = window.Plotly || {};
       window.Tone = window.Tone || {};
@@ -196,6 +199,7 @@
             'mammoth',
             'math',
             'tf',
+            'FramerMotion',
             transformed + '\nreturn ' + data.componentName + ';'
           );
 
@@ -215,7 +219,8 @@
             window.XLSX || {},
             window.mammoth || {},
             window.math || {},
-            window.tf || {}
+            window.tf || {},
+            FramerMotion
           );
 
           if (!Component) {

@@ -35,11 +35,17 @@ export function stripMarkdownFences(code: string): string {
 }
 
 function rewriteExport(line: string, trimStart: string): string {
+  // export default function Foo() {} / export default class Foo {}
+  //   → const __DefaultExport__ = function Foo() {} / class Foo {}
+  // Binding the default export to the sentinel lets findComponentName pick the
+  // real component reliably, instead of falling back to the "last uppercase
+  // declaration" heuristic (which mis-selects trailing consts like `CSS`).
+  // Also rescues anonymous `export default function () {}`.
   if (
     EXPORT_DEFAULT_FUNCTION.test(trimStart) ||
     EXPORT_DEFAULT_CLASS.test(trimStart)
   ) {
-    return line.replace("export default ", "");
+    return line.replace(STRIP_EXPORT_DEFAULT, "$1const __DefaultExport__ = ");
   }
   if (EXPORT_NAMED.test(trimStart)) {
     return line.replace(STRIP_EXPORT, "$1");

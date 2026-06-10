@@ -38,6 +38,7 @@ const PREFIX_PROMPT = `Generate a single-file UI demo (React component with defa
 - mammoth
 - mathjs
 - TensorFlow.js (import from "@tensorflow/tfjs")
+- Framer Motion (import { motion } from "framer-motion")
 
 Use inline or mock data — no external API calls.`;
 
