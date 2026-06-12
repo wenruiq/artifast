@@ -25,6 +25,9 @@ export default defineConfig({
     },
   },
   build: {
+    // codemirror is an intentional, lazy-loaded vendor chunk (~205 kB gzipped);
+    // raise the warning threshold so it doesn't flag a chunk that's working as designed.
+    chunkSizeWarningLimit: 700,
     rollupOptions: {
       output: {
         manualChunks(id) {
