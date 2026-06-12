@@ -44,7 +44,7 @@ export function ViewerPage() {
     }
 
     const cleaned = cleanCode(codeFromHash);
-    const { rewrittenCode } = rewriteImports(cleaned);
+    const { rewrittenCode, libraries } = rewriteImports(cleaned);
     let componentName = findComponentName(rewrittenCode);
     let finalCode = rewrittenCode;
 
@@ -56,7 +56,7 @@ export function ViewerPage() {
       componentName = "_AliasedComponent";
     }
 
-    return { code: finalCode, componentName };
+    return { code: finalCode, componentName, libraries };
   }, [codeFromHash, isHtml]);
 
   useEffect(() => {
@@ -70,7 +70,11 @@ export function ViewerPage() {
     }
 
     if (transformedResult) {
-      sendRender(transformedResult.code, transformedResult.componentName);
+      sendRender(
+        transformedResult.code,
+        transformedResult.componentName,
+        transformedResult.libraries
+      );
     }
   }, [codeFromHash, isHtml, transformedResult, sendRender, sendHtml]);
 

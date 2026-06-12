@@ -5,24 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Artifast Sandbox</title>
 
-    <!-- Tailwind CSS v4 Browser Runtime -->
+    <!-- Warm up TLS connections to the CDNs libraries are lazy-loaded from -->
+    <link rel="preconnect" href="https://esm.sh" crossorigin />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="preconnect" href="https://unpkg.com" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.plot.ly" crossorigin />
+
+    <!-- Tailwind CSS v4 Browser Runtime (core: styling applies immediately) -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" crossorigin></script>
 
-    <!-- Non-React UMD libraries (no React dependency) -->
-    <script src="https://unpkg.com/d3@7/dist/d3.min.js" crossorigin></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin></script>
-    <script src="https://unpkg.com/lodash@4/lodash.min.js" crossorigin></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js" crossorigin></script>
-    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" crossorigin></script>
-    <script src="https://cdn.jsdelivr.net/npm/tone@15/build/Tone.min.js" crossorigin></script>
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5/papaparse.min.js" crossorigin></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18/dist/xlsx.full.min.js" crossorigin></script>
-    <script src="https://cdn.jsdelivr.net/npm/mammoth@1/mammoth.browser.min.js" crossorigin></script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjs@13/lib/browser/math.min.js" crossorigin></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4/dist/tf.min.js" crossorigin></script>
-
-    <!-- Babel Standalone (JSX transpilation) -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
+    <!--
+      Libraries are NOT loaded here. Babel and every artifact library are
+      lazy-loaded on demand by the module script below, so a first load only
+      pays for React + Tailwind instead of ~13 MB of CDN bundles.
+    -->
 
     <!-- Import map: all React-ecosystem imports resolve to esm.sh -->
     <script type="importmap">
@@ -101,38 +98,78 @@
     <div id="root"></div>
 
     <script type="module">
-      // Load React ecosystem via ESM (single React instance for all libs)
+      // Core React ecosystem (single React instance shared by all libs)
       import React from 'react';
       import * as ReactDOM from 'react-dom';
       import { createRoot } from 'react-dom/client';
 
-      // Parallel-load React-dependent libraries
-      const [LucideReact, Recharts, ShadcnUI, FramerMotion] = await Promise.all([
-        import('https://esm.sh/lucide-react@0.460.0?external=react')
-          .catch(err => { console.warn('lucide-react failed to load:', err); return {}; }),
-        import('https://esm.sh/recharts@2.15.0?external=react,react-dom')
-          .catch(err => { console.warn('Recharts failed to load:', err); return {}; }),
-        import('https://esm.sh/shadcdn@0.0.8?external=react,react-dom')
-          .catch(err => { console.warn('shadcn/UI failed to load:', err); return {}; }),
-        import('https://esm.sh/framer-motion@11.18.2?external=react,react-dom')
-          .catch(err => { console.warn('framer-motion failed to load:', err); return {}; }),
-      ]);
-
-      // Expose as globals for new Function() scope
       window.React = React;
       window.ReactDOM = ReactDOM;
-      window.LucideReact = LucideReact;
-      window.Recharts = Recharts;
-      window.ShadcnUI = ShadcnUI;
-      window.FramerMotion = FramerMotion;
-      window.Chart = window.Chart || {};
-      window.Plotly = window.Plotly || {};
-      window.Tone = window.Tone || {};
-      window.Papa = window.Papa || {};
-      window.XLSX = window.XLSX || {};
-      window.mammoth = window.mammoth || {};
-      window.math = window.math || {};
-      window.tf = window.tf || {};
+
+      // --- On-demand library loader -------------------------------------
+      // Each artifact library is fetched only when an artifact imports it,
+      // keyed by the global name the import-rewriter assigns. URLs match the
+      // builds that were previously eager-loaded, so runtime behaviour is
+      // unchanged — only the timing differs.
+      const SCRIPT = 'script';
+      const ESM = 'esm';
+      const LIBRARY_SOURCES = {
+        Babel:       [SCRIPT, 'https://unpkg.com/@babel/standalone/babel.min.js'],
+        LucideReact: [ESM, 'https://esm.sh/lucide-react@0.460.0?external=react'],
+        Recharts:    [ESM, 'https://esm.sh/recharts@2.15.0?external=react,react-dom'],
+        ShadcnUI:    [ESM, 'https://esm.sh/shadcdn@0.0.8?external=react,react-dom'],
+        FramerMotion:[ESM, 'https://esm.sh/framer-motion@11.18.2?external=react,react-dom'],
+        d3:          [SCRIPT, 'https://unpkg.com/d3@7/dist/d3.min.js'],
+        THREE:       [SCRIPT, 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'],
+        _:           [SCRIPT, 'https://unpkg.com/lodash@4/lodash.min.js'],
+        Chart:       [SCRIPT, 'https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js'],
+        Plotly:      [SCRIPT, 'https://cdn.plot.ly/plotly-2.35.2.min.js'],
+        Tone:        [SCRIPT, 'https://cdn.jsdelivr.net/npm/tone@15/build/Tone.min.js'],
+        Papa:        [SCRIPT, 'https://cdn.jsdelivr.net/npm/papaparse@5/papaparse.min.js'],
+        XLSX:        [SCRIPT, 'https://cdn.jsdelivr.net/npm/xlsx@0.18/dist/xlsx.full.min.js'],
+        mammoth:     [SCRIPT, 'https://cdn.jsdelivr.net/npm/mammoth@1/mammoth.browser.min.js'],
+        math:        [SCRIPT, 'https://cdn.jsdelivr.net/npm/mathjs@13/lib/browser/math.min.js'],
+        tf:          [SCRIPT, 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4/dist/tf.min.js'],
+      };
+
+      function loadScript(src) {
+        return new Promise((resolve, reject) => {
+          const el = document.createElement('script');
+          el.src = src;
+          el.crossOrigin = 'anonymous';
+          el.onload = () => resolve();
+          el.onerror = () => reject(new Error('Failed to load ' + src));
+          document.head.appendChild(el);
+        });
+      }
+
+      function loadEsm(url, globalName) {
+        return import(url)
+          .then((mod) => { window[globalName] = mod; })
+          .catch((err) => {
+            console.warn(globalName + ' failed to load:', err);
+            window[globalName] = {};
+          });
+      }
+
+      // De-dupe: each library loads at most once for the lifetime of the frame.
+      const pending = new Map();
+      function ensureLibrary(globalName) {
+        const source = LIBRARY_SOURCES[globalName];
+        if (!source) return Promise.resolve(); // core/unknown — nothing to fetch
+        if (!pending.has(globalName)) {
+          const [kind, url] = source;
+          pending.set(
+            globalName,
+            kind === ESM ? loadEsm(url, globalName) : loadScript(url)
+          );
+        }
+        return pending.get(globalName);
+      }
+
+      // Babel is needed for every render — start fetching now (in the
+      // background) and await it at render time so `ready` isn't blocked on it.
+      const babelReady = ensureLibrary('Babel');
 
       const rootEl = document.getElementById('root');
       let reactRoot = null;
@@ -172,11 +209,24 @@
         rootEl.innerHTML = '';
       }
 
-      function handleRender(data) {
+      // Monotonic token so a slow render (awaiting a heavy library) can't
+      // overwrite a newer one that finished first.
+      let renderSeq = 0;
+
+      async function handleRender(data) {
+        const seq = ++renderSeq;
+
         // Unmount old component first so stale UI never persists on error
         clearRoot();
 
         try {
+          // Babel + only the libraries this artifact imports, loaded on demand.
+          await babelReady;
+          await Promise.all((data.libraries || []).map(ensureLibrary));
+
+          // A newer render superseded this one while libraries were loading.
+          if (seq !== renderSeq) return;
+
           const transformed = Babel.transform(data.code, {
             presets: ['react', 'typescript'],
             filename: 'artifact.tsx',
@@ -206,12 +256,12 @@
           const Component = fn(
             React,
             ReactDOM,
-            LucideReact,
-            Recharts,
+            window.LucideReact || {},
+            window.Recharts || {},
             window.d3 || {},
             window.THREE || {},
             window._ || function(){},
-            ShadcnUI,
+            window.ShadcnUI || {},
             window.Chart || {},
             window.Plotly || {},
             window.Tone || {},
@@ -220,7 +270,7 @@
             window.mammoth || {},
             window.math || {},
             window.tf || {},
-            FramerMotion
+            window.FramerMotion || {}
           );
 
           if (!Component) {
@@ -257,7 +307,8 @@
         }
       });
 
-      // All libraries loaded — signal ready
+      // Core is up (React + message handler). Signal ready immediately —
+      // Babel and artifact libraries stream in on demand at render time.
       window.parent.postMessage({ type: 'ready' }, '*');
     </script>
   </body>

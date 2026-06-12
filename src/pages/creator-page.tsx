@@ -66,7 +66,11 @@ export function CreatorPage() {
     }
 
     const cleaned = cleanCode(debouncedCode);
-    const { rewrittenCode, warnings: importWarnings } = rewriteImports(cleaned);
+    const {
+      rewrittenCode,
+      warnings: importWarnings,
+      libraries,
+    } = rewriteImports(cleaned);
     let componentName = findComponentName(rewrittenCode);
     let finalCode = rewrittenCode;
 
@@ -84,6 +88,7 @@ export function CreatorPage() {
       code: finalCode,
       componentName,
       warnings: importWarnings,
+      libraries,
     };
   }, [debouncedCode, isHtml]);
 
@@ -108,7 +113,11 @@ export function CreatorPage() {
     }
 
     if (transformedResult) {
-      sendRender(transformedResult.code, transformedResult.componentName);
+      sendRender(
+        transformedResult.code,
+        transformedResult.componentName,
+        transformedResult.libraries
+      );
     }
   }, [
     debouncedCode,

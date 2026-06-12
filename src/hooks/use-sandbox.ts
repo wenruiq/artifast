@@ -9,7 +9,11 @@ interface SandboxState {
   readonly isReady: boolean;
   readonly sendClear: () => void;
   readonly sendHtml: (html: string) => void;
-  readonly sendRender: (code: string, componentName: string) => void;
+  readonly sendRender: (
+    code: string,
+    componentName: string,
+    libraries: readonly string[]
+  ) => void;
 }
 
 export function useSandbox(): SandboxState {
@@ -90,15 +94,19 @@ export function useSandbox(): SandboxState {
   }, [revokeBlobUrl]);
 
   const sendRender = useCallback(
-    (code: string, componentName: string) => {
+    (code: string, componentName: string, libraries: readonly string[]) => {
+      const message: ParentMessage = {
+        type: "render",
+        code,
+        componentName,
+        libraries,
+      };
+
       if (htmlModeRef.current) {
-        const message: ParentMessage = { type: "render", code, componentName };
         pendingRef.current = message;
         restoreSandbox();
         return;
       }
-
-      const message: ParentMessage = { type: "render", code, componentName };
 
       if (isReadyRef.current && iframeRef.current?.contentWindow) {
         iframeRef.current.contentWindow.postMessage(message, "*");

@@ -15,6 +15,8 @@ const DEFAULT_IMPORT = /^import\s+(\w+)\s+from\s+['"]([^'"]+)['"]\s*;?\s*$/;
 const AS_SPLIT = /\s+as\s+/;
 
 interface RewriteResult {
+  // Global names of libraries the code imports, for on-demand sandbox loading.
+  readonly libraries: readonly string[];
   readonly rewrittenCode: string;
   readonly warnings: readonly ImportWarning[];
 }
@@ -103,7 +105,8 @@ function parseImportLine(line: string): {
 
 function rewriteSingleImport(
   line: string,
-  warnings: ImportWarning[]
+  warnings: ImportWarning[],
+  libraries: Set<string>
 ): string | null {
   const trimmed = line.trimStart();
 
@@ -138,6 +141,7 @@ function rewriteSingleImport(
   }
 
   const { globalName } = library;
+  libraries.add(globalName);
   const lines: string[] = [];
 
   if (parsed.namespaceImport) {
@@ -169,10 +173,11 @@ export function rewriteImports(code: string): RewriteResult {
   const collapsed = collapseMultilineImports(code);
   const lines = collapsed.split("\n");
   const warnings: ImportWarning[] = [];
+  const libraries = new Set<string>();
   const resultLines: string[] = [];
 
   for (const line of lines) {
-    const rewritten = rewriteSingleImport(line, warnings);
+    const rewritten = rewriteSingleImport(line, warnings, libraries);
     if (rewritten !== null) {
       if (rewritten !== "") {
         resultLines.push(rewritten);
@@ -182,5 +187,9 @@ export function rewriteImports(code: string): RewriteResult {
     }
   }
 
-  return { rewrittenCode: resultLines.join("\n"), warnings };
+  return {
+    rewrittenCode: resultLines.join("\n"),
+    warnings,
+    libraries: [...libraries],
+  };
 }

@@ -25,5 +25,9 @@ export type SandboxMessage =
 export interface ParentMessage {
   readonly code: string;
   readonly componentName: string;
+  // Global names (e.g. "Recharts", "d3") the artifact imports. The sandbox
+  // lazy-loads only these before rendering instead of eagerly loading every
+  // supported library on boot.
+  readonly libraries: readonly string[];
   readonly type: "render";
 }
