@@ -5,9 +5,25 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 function Dialog({
+  onOpenChange,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />;
+  return (
+    <DialogPrimitive.Root
+      data-slot="dialog"
+      onOpenChange={(open) => {
+        // ponytail: Radix can leave `pointer-events: none` stuck on <body>
+        // after close, freezing descendants like the preview iframe. Clear it.
+        if (!open) {
+          requestAnimationFrame(() => {
+            document.body.style.pointerEvents = "";
+          });
+        }
+        onOpenChange?.(open);
+      }}
+      {...props}
+    />
+  );
 }
 
 function DialogTrigger({
