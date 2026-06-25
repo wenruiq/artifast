@@ -51,7 +51,7 @@ export function PreviewFrame({
           hasContent ? "opacity-100" : "opacity-0"
         }`}
         ref={iframeRef}
-        sandbox="allow-scripts allow-same-origin"
+        sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
         src="/sandbox.html"
         title="Artifact Preview"
       />
